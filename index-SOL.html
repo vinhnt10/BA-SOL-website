@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Portal</title>
+<style>
+  :root{
+    --ink:#1a1d1a;
+    --paper:#eef0ea;
+    --panel:#ffffff;
+    --line:#d7dcd0;
+    --rail:#2f6b4f;
+    --rail-dim:#8fa896;
+    --amber:#c96a2c;
+    --mono: 'JetBrains Mono','SFMono-Regular',Consolas,monospace;
+    --disp: 'Sora','Segoe UI',sans-serif;
+    --body: 'Inter','Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--body); -webkit-font-smoothing:antialiased;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  header{
+    padding:48px 40px 32px;
+    border-bottom:1px solid var(--line);
+    display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px;
+  }
+  .brand-eyebrow{
+    font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--rail); margin:0 0 10px;
+  }
+  h1{
+    font-family:var(--disp); font-weight:800; font-size:38px; margin:0; letter-spacing:-0.01em;
+  }
+  .subline{ color:#5b6158; font-size:14px; margin-top:8px; max-width:520px; }
+  .status{
+    font-family:var(--mono); font-size:12px; color:var(--rail);
+    display:flex; align-items:center; gap:8px;
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--rail);box-shadow:0 0 0 3px rgba(47,107,79,.15);}
+
+  .toolbar{
+    padding:24px 40px 0; display:flex; gap:10px; flex-wrap:wrap;
+  }
+  .chip{
+    font-family:var(--mono); font-size:12px; padding:7px 14px; border-radius:999px;
+    border:1px solid var(--line); background:var(--panel); cursor:pointer; color:#4c5148;
+    transition:.15s;
+  }
+  .chip.active, .chip:hover{ border-color:var(--rail); color:var(--rail); }
+
+  .search-wrap{ padding:16px 40px 0; }
+  #search{
+    width:100%; max-width:420px; padding:10px 14px; border:1px solid var(--line);
+    border-radius:8px; font-family:var(--mono); font-size:13px; background:var(--panel);
+    outline:none;
+  }
+  #search:focus{ border-color:var(--rail); }
+
+  main{ padding:28px 40px 60px; }
+  .rail-group{ margin-bottom:36px; }
+  .rail-label{
+    font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--rail-dim); display:flex; align-items:center; gap:10px; margin-bottom:14px;
+  }
+  .rail-label::after{ content:''; flex:1; height:1px; background:var(--line); }
+
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px;
+  }
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--rail);
+    border-radius:6px; padding:18px 18px 16px; text-decoration:none; color:var(--ink);
+    display:flex; flex-direction:column; gap:10px; transition:.15s; position:relative;
+  }
+  .card:hover{ border-left-color:var(--amber); transform:translateY(-2px); box-shadow:0 6px 18px rgba(26,29,26,.08); }
+  .card-top{ display:flex; justify-content:space-between; align-items:flex-start; }
+  .card-title{ font-family:var(--disp); font-weight:700; font-size:16px; line-height:1.3; }
+  .card-id{ font-family:var(--mono); font-size:10px; color:var(--rail-dim); }
+  .card-desc{ font-size:13px; color:#5b6158; line-height:1.5; }
+  .card-meta{
+    margin-top:auto; padding-top:10px; border-top:1px dashed var(--line);
+    display:flex; justify-content:space-between; font-family:var(--mono); font-size:11px; color:var(--rail-dim);
+  }
+  .card-meta .updated{ color:var(--amber); }
+
+  .empty{ font-family:var(--mono); font-size:13px; color:var(--rail-dim); padding:40px 0; text-align:center; }
+
+  footer{
+    padding:20px 40px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11px;
+    color:var(--rail-dim); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <p class="brand-eyebrow">SOL &middot; Operations</p>
+    <h1>Dashboard Portal</h1>
+    <p class="subline">Tổng hợp các dashboard vận hành — POS, CRM, kho, tài chính. Cập nhật thủ công mỗi khi có báo cáo mới.</p>
+  </div>
+  <div class="status"><span class="dot"></span>ALL SYSTEMS LISTED</div>
+</header>
+
+<div class="toolbar" id="chips"></div>
+
+<div class="search-wrap">
+  <input id="search" type="text" placeholder="Tìm dashboard theo tên, brand, hệ thống...">
+</div>
+
+<main id="main"></main>
+
+<footer>
+  <span>Internal use only &middot; không chia sẻ link ra ngoài nếu chưa được duyệt</span>
+  <span id="count"></span>
+</footer>
+
+<script>
+/* ============================================================
+   THÊM DASHBOARD MỚI Ở ĐÂY.
+   Mỗi khi có dashboard mới, copy 1 object và điền thông tin.
+   file: đường dẫn tương đối tới file .html trong /dashboards/
+   category: dùng để lọc theo nhóm (đặt tên tuỳ ý)
+   ============================================================ */
+const DASHBOARDS = [
+  {
+    title: "Tổng hợp vấn đề F2Tech (1 tháng)",
+    id: "F2T-01",
+    desc: "Tổng hợp các vấn đề, pain point ghi nhận từ POS F2Tech trong 1 tháng.",
+    file: "dashboards/f2tech-tonghop-1thang.html",
+    category: "Vận hành",
+    updated: "2026-07-24"
+  },
+  {
+    title: "Dashboard Survey F2Tech",
+    id: "F2T-02",
+    desc: "Kết quả khảo sát liên quan đến hệ thống POS F2Tech.",
+    file: "dashboards/f2tech-survey.html",
+    category: "Vận hành",
+    updated: "2026-07-24"
+  },
+  {
+    title: "Thanh toán tại bàn, sử dụng eMenu",
+    id: "F2T-03",
+    desc: "UI mockup trình bày với nội bộ SOL để chốt yêu cầu.",
+    file: "dashboards/SOL-KRU-thanh-toan-tai-ban-eMenu.html",
+    category: "Vận hành",
+    updated: "2026-07-24"
+  }
+];
+
+const main = document.getElementById('main');
+const chipsEl = document.getElementById('chips');
+const searchEl = document.getElementById('search');
+const countEl = document.getElementById('count');
+
+const categories = ['Tất cả', ...new Set(DASHBOARDS.map(d => d.category))];
+let activeCategory = 'Tất cả';
+
+function renderChips(){
+  chipsEl.innerHTML = categories.map(c =>
+    `<button class="chip ${c===activeCategory?'active':''}" data-c="${c}">${c}</button>`
+  ).join('');
+  chipsEl.querySelectorAll('.chip').forEach(el=>{
+    el.addEventListener('click', ()=>{ activeCategory = el.dataset.c; renderChips(); render(); });
+  });
+}
+
+function render(){
+  const q = searchEl.value.trim().toLowerCase();
+  const filtered = DASHBOARDS.filter(d=>{
+    const matchesCat = activeCategory==='Tất cả' || d.category===activeCategory;
+    const matchesQ = !q || (d.title+d.desc+d.category+d.id).toLowerCase().includes(q);
+    return matchesCat && matchesQ;
+  });
+
+  countEl.textContent = filtered.length + ' / ' + DASHBOARDS.length + ' dashboard';
+
+  if(filtered.length===0){
+    main.innerHTML = '<div class="empty">Không tìm thấy dashboard phù hợp.</div>';
+    return;
+  }
+
+  const groups = {};
+  filtered.forEach(d=>{ (groups[d.category] = groups[d.category]||[]).push(d); });
+
+  main.innerHTML = Object.entries(groups).map(([cat, items])=>`
+    <div class="rail-group">
+      <div class="rail-label">${cat}</div>
+      <div class="grid">
+        ${items.map(d=>`
+          <a class="card" href="${d.file}">
+            <div class="card-top">
+              <div class="card-title">${d.title}</div>
+            </div>
+            <div class="card-id">${d.id}</div>
+            <div class="card-desc">${d.desc}</div>
+            <div class="card-meta">
+              <span>${d.category}</span>
+              <span class="updated">cập nhật ${d.updated}</span>
+            </div>
+          </a>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+searchEl.addEventListener('input', render);
+renderChips();
+render();
+</script>
+
+</body>
+</html>
