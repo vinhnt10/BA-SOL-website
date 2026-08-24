@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quy trình Tuyển dụng</title>
+<style>
+  :root{
+    --primary:#2563eb;
+    --primary-dark:#1d4ed8;
+    --bg:#f4f6fb;
+    --card:#ffffff;
+    --border:#e2e8f0;
+    --text:#1e293b;
+    --muted:#64748b;
+    --accent:#f59e0b;
+    --green:#16a34a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+  }
+  header.topbar{
+    position:sticky;top:0;z-index:50;
+    background:var(--card);
+    border-bottom:1px solid var(--border);
+    padding:14px 20px;
+    display:flex;align-items:center;justify-content:space-between;
+    box-shadow:0 1px 4px rgba(0,0,0,0.04);
+  }
+  header.topbar h1{font-size:18px;margin:0;color:var(--text);}
+  .btn{
+    cursor:pointer;border:none;border-radius:8px;padding:9px 16px;
+    font-size:14px;font-weight:600;transition:.15s;
+  }
+  .btn-primary{background:var(--primary);color:#fff;}
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-ghost{background:transparent;color:var(--primary);border:1px solid var(--primary);}
+  .btn-ghost:hover{background:#eef2ff;}
+  .btn-small{padding:6px 10px;font-size:12px;border-radius:6px;}
+
+  /* SCREEN TOGGLE */
+  .screen{display:none;}
+  .screen.active{display:block;}
+  #screen1.active{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+
+  /* STEP OVERVIEW ROW */
+  .overview-row{
+    display:flex;align-items:stretch;gap:12px;padding:0 20px;
+  }
+  .overview-row:first-of-type{padding-top:18px;}
+  .overview-row:last-of-type{padding-bottom:8px;}
+  .row-label{
+    flex:0 0 150px;
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    font-size:13px;font-weight:700;border-radius:12px;padding:8px 10px;
+  }
+  .row-label.row1{background:#dbe6ff;color:var(--primary-dark);}
+  .row-label.row2{background:#ffedd5;color:#9a3412;}
+  .row-label.row3{background:#e2e8f0;color:#475569;}
+  .steps-overview{
+    flex:1;min-width:0;
+    display:grid;grid-template-columns:repeat(4, 1fr);gap:10px;
+  }
+  .note-card{
+    background:#f1f5f9;
+    border:2px solid #e2e8f0;
+    border-radius:12px;
+    padding:12px 14px;
+    display:flex;align-items:center;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    cursor:default;
+    transition:.15s;
+  }
+  .note-card.clickable{cursor:pointer;}
+  .note-card.clickable:hover{border-color:var(--muted);}
+  .note-card.active{border-color:#475569;background:#e2e8f0;}
+  .note-card .line{font-size:13px;color:#334155;overflow:hidden;text-overflow:ellipsis;}
+  .note-card .line b{color:#475569;font-weight:700;}
+  .step-card{
+    width:auto;
+    background:var(--card);
+    border:2px solid var(--border);
+    border-radius:12px;
+    padding:12px 14px;
+    cursor:pointer;
+    transition:.15s;
+  }
+  .step-card:hover{border-color:var(--primary);transform:translateY(-2px);}
+  .step-card.active{border-color:var(--primary);background:#eef2ff;box-shadow:0 2px 8px rgba(37,99,235,.15);}
+  .step-card .title{font-size:13px;font-weight:600;line-height:1.35;}
+
+  /* Row 1 (A B C D) */
+  .step-card.row1{background:#f0f5ff;}
+  .step-card.row1.active{background:#dbe6ff;}
+
+  /* Row 2 (E F G H) */
+  .step-card.row2{background:#fff7ed;}
+  .step-card.row2:hover{border-color:var(--accent);}
+  .step-card.row2.active{border-color:var(--accent);background:#ffedd5;box-shadow:0 2px 8px rgba(245,158,11,.18);}
+
+  /* MAIN CONTENT AREA: flow (scroll) + image panel (fixed) */
+  .content-area{
+    display:flex;gap:20px;padding:8px 20px 24px 20px;
+    align-items:flex-start;
+  }
+  .flow-panel{
+    flex:1 1 0;min-width:0;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:20px;
+    max-height:calc(100vh - 190px);
+    overflow-y:auto;
+  }
+  .flow-panel h2{font-size:16px;margin-top:0;color:var(--primary-dark);}
+  .flow-list{display:flex;flex-direction:column;align-items:center;padding-top:8px;}
+  .flow-node{
+    width:100%;max-width:520px;
+    border:2px solid var(--border);
+    border-radius:10px;
+    background:#fafbff;
+    padding:12px 16px;
+    cursor:pointer;
+    transition:.15s;
+    display:flex;align-items:center;gap:10px;
+  }
+  .flow-node:hover{border-color:var(--primary);}
+  .flow-node.active{border-color:var(--primary);background:#e0e7ff;}
+  .flow-node.terminal{
+    background:#f1f5f9;border-radius:999px;justify-content:center;
+    font-weight:700;color:var(--muted);max-width:220px;cursor:default;
+  }
+  .flow-node.terminal:hover{border-color:var(--border);}
+  .flow-node .num{
+    flex:0 0 auto;
+    width:28px;height:28px;border-radius:50%;
+    background:var(--primary);color:#fff;font-size:13px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .flow-node .label{font-size:14px;line-height:1.4;}
+  .flow-node.has-image .num{background:var(--green);}
+  .arrow{
+    width:2px;height:26px;background:var(--border);position:relative;
+  }
+  .arrow::after{
+    content:"";position:absolute;left:50%;bottom:0;transform:translateX(-50%);
+    border-left:6px solid transparent;border-right:6px solid transparent;
+    border-top:8px solid var(--border);
+  }
+  .empty-note{color:var(--muted);font-size:13px;text-align:center;padding:20px 0;}
+  .step-note-box{
+    width:100%;max-width:520px;
+    background:#fef9c3;border:1px dashed #eab308;border-radius:8px;
+    padding:10px 14px;font-size:13px;color:#713f12;white-space:pre-wrap;line-height:1.4;
+  }
+  .h-note-box{
+    flex:0 0 auto;
+    margin:0 20px 16px 20px;
+    background:#fef9c3;border:1px dashed #eab308;border-radius:10px;
+    padding:12px 16px;font-size:13px;color:#713f12;white-space:pre-wrap;line-height:1.4;
+  }
+
+  .image-panel{
+    flex:2 1 0;min-width:0;
+    position:sticky;top:86px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:16px;
+    height:calc(100vh - 190px);
+    display:flex;flex-direction:column;
+  }
+  .image-panel h3{margin:0 0 10px 0;font-size:14px;color:var(--muted);flex:0 0 auto;}
+  .image-box{
+    width:100%;
+    flex:1 1 auto;
+    min-height:0;
+    border:2px dashed var(--border);
+    border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;background:#f8fafc;
+  }
+  .image-box img{width:100%;height:100%;object-fit:contain;object-position:center;}
+  .image-box .placeholder{color:var(--muted);font-size:13px;text-align:center;padding:16px;}
+  .image-caption{margin-top:10px;font-size:13px;color:var(--text);font-weight:600;flex:0 0 auto;}
+
+  /* NOTE (Ghi chú) HORIZONTAL FLOW PANEL - full bleed to 4 edges */
+  .note-flow-panel{
+    display:none;
+    flex-direction:column;
+    flex:1 1 auto;min-height:0;
+    background:var(--card);
+    border-top:1px solid var(--border);
+  }
+  .note-flow-panel.active{display:flex;}
+  .note-flow-panel h2{
+    flex:0 0 auto;margin:0;padding:16px 20px 0 20px;
+    font-size:16px;color:#475569;
+  }
+  .h-flow-row{
+    flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:14px;
+    padding:16px 20px;
+  }
+  .h-flow-node{
+    border:2px solid var(--border);border-radius:10px;background:#fafbff;
+    padding:14px 22px;font-size:14px;font-weight:600;
+    display:flex;align-items:center;gap:10px;cursor:pointer;transition:.15s;
+  }
+  .h-flow-node:hover{border-color:#475569;}
+  .h-flow-node.active{border-color:#475569;background:#e2e8f0;}
+  .h-flow-node.has-image .num{background:var(--green);}
+  .h-flow-node .num{
+    width:26px;height:26px;border-radius:50%;background:#64748b;color:#fff;
+    font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+  }
+  .h-arrow{
+    width:34px;height:2px;background:var(--border);position:relative;flex:0 0 auto;
+  }
+  .h-arrow::after{
+    content:"";position:absolute;right:0;top:50%;transform:translateY(-50%);
+    border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:8px solid var(--border);
+  }
+  .note-flow-image{
+    flex:1 1 auto;min-height:0;
+    width:100%;
+    background:#f8fafc;
+    overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .note-flow-image img{width:100%;height:100%;object-fit:contain;object-position:center;display:block;}
+  .note-flow-image .placeholder{color:var(--muted);font-size:13px;text-align:center;padding:16px;}
+
+  /* SCREEN 2 */
+  .s2-wrap{padding:20px;max-width:960px;margin:0 auto;}
+  .s2-group{
+    background:var(--card);border:1px solid var(--border);border-radius:12px;
+    padding:16px 18px;margin-bottom:18px;
+  }
+  .s2-group h2{font-size:15px;margin:0 0 12px 0;color:var(--primary-dark);}
+  .s2-row{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    padding:10px 0;border-top:1px solid var(--border);
+  }
+  .s2-row:first-of-type{border-top:none;}
+  .s2-row .s2-label{flex:0 0 260px;font-size:13px;line-height:1.4;}
+  .s2-row .s2-label .num{
+    display:inline-block;background:var(--primary);color:#fff;font-size:11px;font-weight:700;
+    border-radius:5px;padding:1px 6px;margin-right:6px;
+  }
+  .s2-row input[type=text]{
+    flex:1;min-width:180px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;
+  }
+  .s2-row input[type=file]{font-size:12px;max-width:170px;}
+  .s2-status{font-size:12px;font-weight:600;min-width:80px;}
+  .s2-status.ok{color:var(--green);}
+  .s2-status.empty{color:var(--muted);}
+  .s2-thumb{width:36px;height:36px;border-radius:6px;object-fit:cover;border:1px solid var(--border);display:none;}
+  .s2-row-wrap{padding:10px 0;border-top:1px solid var(--border);}
+  .s2-row-wrap:first-of-type{border-top:none;}
+  .s2-row-wrap .s2-row{padding:0 0 8px 0;border-top:none;}
+  .s2-note{
+    width:100%;min-height:52px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;
+    font-size:13px;font-family:inherit;resize:vertical;
+  }
+  .s2-note-label{font-size:11px;color:var(--muted);margin:2px 0 4px 0;}
+  .note-box{
+    background:#fffbeb;border:1px solid #fde68a;color:#92400e;
+    border-radius:10px;padding:12px 16px;font-size:13px;margin-bottom:18px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= SCREEN 1 ================= -->
+<div id="screen1" class="screen active">
+  <header class="topbar">
+    <h1>Quy trình Tuyển dụng</h1>
+    <button class="btn btn-primary" onclick="goScreen2()">Ảnh</button>
+  </header>
+
+  <div class="overview-row">
+    <div class="row-label row1">Nhà hàng + OPS</div>
+    <div class="steps-overview" id="stepsOverview"></div>
+  </div>
+  <div class="overview-row">
+    <div class="row-label row2">Bộ phận tuyển dụng</div>
+    <div class="steps-overview row2" id="stepsOverview2"></div>
+  </div>
+  <div class="overview-row">
+    <div class="row-label row3">Ghi chú</div>
+    <div class="steps-overview" id="notesRow"></div>
+  </div>
+
+  <div class="content-area" id="content-area-block">
+    <div class="flow-panel" id="flowPanel">
+      <h2 id="flowTitle">Chọn một step ở trên để xem chi tiết flow</h2>
+      <div class="flow-list" id="flowList"></div>
+    </div>
+    <div class="image-panel">
+      <h3>Hình minh họa</h3>
+      <div class="image-box" id="imageBox">
+        <div class="placeholder">Bấm vào 1 bước trong flow để xem ảnh tương ứng</div>
+      </div>
+      <div class="image-caption" id="imageCaption"></div>
+    </div>
+  </div>
+
+  <div class="note-flow-panel" id="noteFlowPanel">
+    <h2 id="noteFlowTitle"></h2>
+    <div class="h-flow-row" id="hFlowRow"></div>
+    <div id="hFlowNotes"></div>
+    <div class="note-flow-image" id="noteFlowImage">
+      <div class="placeholder">Bấm vào 1 bước trong flow để xem ảnh tương ứng</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= SCREEN 2 ================= -->
+<div id="screen2" class="screen">
+  <header class="topbar">
+    <h1>Gán ảnh cho từng bước</h1>
+    <button class="btn btn-ghost" onclick="goScreen1()">&larr; Quay lại</button>
+  </header>
+  <div class="s2-wrap">
+    <div class="note-box">
+      Với mỗi bước: dán link ảnh vào ô văn bản (có thể copy) <b>hoặc</b> chọn file ảnh từ máy, sau đó bấm <b>Lưu</b> để ghi nhớ. Ảnh upload sẽ tự động được resize/nén trước khi lưu. Dữ liệu được lưu trong trình duyệt (IndexedDB) của file HTML này — dung lượng lưu trữ lớn hơn nhiều so với trước nên sẽ không còn báo lỗi "đầy bộ nhớ" khi upload nhiều ảnh.
+    </div>
+    <div id="s2Groups"></div>
+  </div>
+</div>
+
+<script>
+/* ============ DATA ============ */
+const FLOWS = {
+  A: {
+    title: "A. Tạo và duyệt đề xuất tuyển dụng (ĐXTD)",
+    steps: [
+      {stt:1, label:"1a. Quản lý Tạo YCTD"},
+      {stt:2, label:"1b. Quản lý Tạo YCTD"},
+      {stt:3, label:"1c. Chú ý khi tạo YCTD"},
+      {stt:4, label:"2. AM duyệt YCTD (có noti)"},
+      {stt:5, label:"2. BPTD duyệt YCTD (có noti / auto duyệt sau x giờ)"}
+    ]
+  },
+  B: {
+    title: "C. Theo dõi và trao đổi về ĐXTD",
+    steps: [
+      {stt:1, label:"Theo dõi ĐXTD của quản lý"},
+      {stt:2, label:"Trao đổi thông tin với TA"}
+    ]
+  },
+  C: {
+    title: "F. Phỏng vấn (nhận lịch/ đánh giá)",
+    steps: [
+      {stt:1, label:"Xem thời gian phỏng vấn"},
+      {stt:2, label:"Nhận lịch phỏng vấn"},
+      {stt:3, label:"Đánh giá sau phỏng vấn"},
+      {stt:4, label:"Chuyển trạng thái ứng viên"}
+    ]
+  },
+  D: {
+    title: "G. Đánh giá sau thử việc",
+    steps: [
+      {stt:1, label:"Nhập đánh giá thử việc"},
+      {stt:2, label:"Chuyển trạng thái ứng viên"}
+    ]
+  },
+  E: {
+    title: "B. Duyệt ĐXTD",
+    steps: [
+      {stt:1, label:"Gửi noti đến TA (ngay sau bước duyệt của quản lý)"},
+      {stt:2, label:"Gửi noti đến TA (gửi đích danh TA quản lý brand)"},
+      {stt:3, label:"TA vào duyệt/ điều chỉnh (nếu cần)"},
+      {stt:4, label:"TA vào duyệt/ điều chỉnh (nếu cần) - kết quả"},
+      {stt:5, label:"Hệ thống tự động duyệt ĐXTD sau 48 tiếng"},
+      {stt:6, label:"Hệ thống tự động duyệt ĐXTD sau 48 tiếng - kết quả"}
+    ]
+  },
+  F: {
+    title: "D. Tạo chiến dịch",
+    steps: [
+      {stt:1, label:"Tạo chiến dịch từ ĐXTD"},
+      {stt:2, label:"Tạo chiến dịch có sự điều chỉnh"},
+      {stt:3, label:"Sau khi tạo chiến dịch thành công"}
+    ]
+  },
+  G: {
+    title: "E. Ứng viên (tạo/ phỏng vấn/ đánh giá)",
+    steps: [
+      {stt:1, label:"Tạo thông tin ứng viên"},
+      {stt:2, label:"Đánh giá sau sơ vấn"},
+      {stt:3, label:"Tạo lịch phỏng vấn"},
+      {stt:4, label:"Tạo lịch phỏng vấn - kết quả"}
+    ]
+  },
+  H: {
+    title: "H. Gửi offer -> Chuyển HSNS",
+    steps: [
+      {stt:1, label:"Gửi offer, chuyển trạng thái"},
+      {stt:2, label:"Chuyển HSNS"},
+      {stt:3, label:"Chuyển HSNS (nhập thông tin)"}
+    ]
+  }
+};
+
+const NOTES_ROW = [
+  {code:"GC1", text:"Cách tạo TAB phân loại", hSteps:[
+    {stt:1, label:"Chọn Thêm tab"},
+    {stt:2, label:"Chọn điều kiện lọc cho Tab"}
+  ]},
+  {code:"GC2", text:"Thêm/ ẩn cột trên giao diện", hSteps:[
+    {stt:1, label:"Chọn hiển thị cột"},
+    {stt:2, label:"Chọn hiển thị cột - thao tác"}
+  ]},
+  {code:"GC3", text:"..."},
+  {code:"GC4", text:"Liên quan TA (auto duyệt/ tạo ĐXTD/ noti)", hSteps:[
+    {stt:1, label:"Auto duyệt (hiển thị thời gian)"},
+    {stt:2, label:"Auto duyệt (ghi nhận thông tin)"},
+    {stt:3, label:"Tự tạo lại ĐXTD"}
+  ]}
+];
+
+const ROW1_KEYS = ["A","B","C","D"];
+const ROW2_KEYS = ["E","F","G","H"];
+
+/* ============ STORAGE (IndexedDB) ============
+   localStorage chỉ có quota ~5-10MB nên rất dễ bị đầy khi lưu nhiều ảnh.
+   Chuyển sang IndexedDB (quota lớn hơn nhiều, thường hàng trăm MB) để tránh lỗi "exceeded the quota". */
+const DB_NAME = "sol_recruitment_db";
+const DB_STORE = "kv";
+const RECORD_KEY = "images";
+const OLD_LOCALSTORAGE_KEY = "sol_step_images_v1"; // dữ liệu cũ (nếu có) để migrate 1 lần
+
+let _dbPromise = null;
+function openDB(){
+  if(_dbPromise) return _dbPromise;
+  _dbPromise = new Promise((resolve, reject)=>{
+    if(!window.indexedDB){ reject(new Error("Trình duyệt không hỗ trợ IndexedDB")); return; }
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = ()=>{ req.result.createObjectStore(DB_STORE); };
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+  return _dbPromise;
+}
+
+async function loadStore(){
+  try{
+    const db = await openDB();
+    let data = await new Promise((resolve)=>{
+      const tx = db.transaction(DB_STORE, "readonly");
+      const req = tx.objectStore(DB_STORE).get(RECORD_KEY);
+      req.onsuccess = ()=> resolve(req.result || null);
+      req.onerror = ()=> resolve(null);
+    });
+    if(!data){
+      // thử migrate dữ liệu cũ từ localStorage (nếu có) sang IndexedDB
+      try{
+        const old = JSON.parse(localStorage.getItem(OLD_LOCALSTORAGE_KEY));
+        if(old && typeof old === "object"){
+          data = old;
+          await saveStore(data);
+          localStorage.removeItem(OLD_LOCALSTORAGE_KEY);
+        }
+      }catch(e){ /* ignore */ }
+    }
+    return data || {};
+  }catch(e){ return {}; }
+}
+
+async function saveStore(store){
+  try{
+    const db = await openDB();
+    return await new Promise((resolve)=>{
+      const tx = db.transaction(DB_STORE, "readwrite");
+      tx.objectStore(DB_STORE).put(store, RECORD_KEY);
+      tx.oncomplete = ()=> resolve(true);
+      tx.onerror = ()=>{ alert("Không thể lưu ảnh: " + (tx.error ? tx.error.message : "lỗi không xác định")); resolve(false); };
+    });
+  }catch(e){
+    alert("Không thể lưu ảnh (IndexedDB không khả dụng): " + e.message);
+    return false;
+  }
+}
+
+/* Resize + nén ảnh trước khi lưu để giảm dung lượng (giúp tránh đầy bộ nhớ, tải nhanh hơn) */
+function compressImage(file, maxSize=1600, quality=0.85){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onerror = ()=> reject(new Error("Không đọc được file ảnh."));
+    reader.onload = (e)=>{
+      const img = new Image();
+      img.onerror = ()=> resolve(e.target.result); // fallback: dùng ảnh gốc nếu không decode được
+      img.onload = ()=>{
+        let { width, height } = img;
+        if(width > maxSize || height > maxSize){
+          const ratio = Math.min(maxSize/width, maxSize/height);
+          width = Math.round(width*ratio);
+          height = Math.round(height*ratio);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        try{
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        }catch(err){
+          resolve(e.target.result); // fallback nếu canvas lỗi (vd ảnh có CORS)
+        }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+let currentFlow = null;
+let currentStep = null;
+let currentNote = null;
+let currentNoteStep = null;
+const expandedStepNotes = new Set(); // key: "flowKey:stt" — double-click để collapse/expand ghi chú của bước
+const expandedHNoteSteps = new Set(); // key: "noteCode:stt" — tương tự cho flow ngang (GC...)
+
+/* ============ SCREEN NAV ============ */
+function goScreen2(){
+  document.getElementById("screen1").classList.remove("active");
+  document.getElementById("screen2").classList.add("active");
+  renderScreen2();
+}
+function goScreen1(){
+  document.getElementById("screen2").classList.remove("active");
+  document.getElementById("screen1").classList.add("active");
+  renderOverview();
+  renderNotesRow();
+  if(currentNote){ renderNoteFlow(currentNote); }
+  else if(currentFlow){ renderFlow(currentFlow); }
+}
+
+function showStepView(){
+  currentNote = null; currentNoteStep = null;
+  document.getElementById("content-area-block").style.display = "flex";
+  document.getElementById("noteFlowPanel").classList.remove("active");
+}
+function showNoteView(){
+  document.getElementById("content-area-block").style.display = "none";
+  document.getElementById("noteFlowPanel").classList.add("active");
+}
+
+/* ============ SCREEN 1 ============ */
+function escapeHtml(str){
+  return String(str || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function slug(str){
+  return str.toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g,"")
+    .replace(/đ/g,"d").replace(/[^a-z0-9]+/g,"_")
+    .replace(/^_+|_+$/g,"");
+}
+
+function renderOverview(){
+  renderOverviewRow("stepsOverview", ROW1_KEYS, "row1");
+  renderOverviewRow("stepsOverview2", ROW2_KEYS, "row2");
+}
+
+function renderOverviewRow(containerId, keys, rowClass){
+  const wrap = document.getElementById(containerId);
+  wrap.innerHTML = "";
+  keys.forEach(key=>{
+    const f = FLOWS[key];
+    const card = document.createElement("div");
+    card.className = "step-card " + rowClass + (currentFlow===key ? " active":"");
+    card.innerHTML = `<div class="title">${f.title}</div>`;
+    card.onclick = ()=>{ currentFlow = key; currentStep=null; resetImagePanel(); showStepView(); renderOverview(); renderNotesRow(); renderFlow(key); };
+    wrap.appendChild(card);
+  });
+}
+
+async function renderFlow(key){
+  const f = FLOWS[key];
+  document.getElementById("flowTitle").textContent = f.title;
+  const list = document.getElementById("flowList");
+  list.innerHTML = "";
+  const store = await loadStore();
+
+  function addArrow(){
+    const a = document.createElement("div");
+    a.className = "arrow";
+    list.appendChild(a);
+  }
+  function addTerminal(text){
+    const n = document.createElement("div");
+    n.className = "flow-node terminal";
+    n.textContent = text;
+    list.appendChild(n);
+  }
+  function addStep(step){
+    const rec = store[key] && store[key][step.stt];
+    const hasImg = !!(rec && rec.value);
+    const hasNote = !!(rec && rec.note && rec.note.trim());
+    const noteKey = `${key}:${step.stt}`;
+    const isExpanded = expandedStepNotes.has(noteKey);
+    const n = document.createElement("div");
+    n.className = "flow-node" + (hasImg ? " has-image":"") + (currentStep===step.stt ? " active":"");
+    n.innerHTML = `<div class="num">${step.stt}</div><div class="label">${step.label}${hasNote ? ' 📝':''}</div>`;
+    n.onclick = ()=>{ currentStep = step.stt; renderFlow(key); showImage(key, step); };
+    n.ondblclick = (e)=>{
+      e.preventDefault();
+      if(expandedStepNotes.has(noteKey)) expandedStepNotes.delete(noteKey);
+      else expandedStepNotes.add(noteKey);
+      renderFlow(key);
+    };
+    list.appendChild(n);
+    if(isExpanded && hasNote){
+      const box = document.createElement("div");
+      box.className = "step-note-box";
+      box.textContent = rec.note;
+      list.appendChild(box);
+    }
+  }
+
+  addTerminal("Bắt đầu");
+  if(f.steps.length===0){
+    addArrow();
+    const note = document.createElement("div");
+    note.className = "empty-note";
+    note.textContent = "Chưa có bước chi tiết cho flow này.";
+    list.appendChild(note);
+    addArrow();
+  } else {
+    f.steps.forEach((s)=>{
+      addArrow();
+      addStep(s);
+    });
+    addArrow();
+  }
+  addTerminal("Kết thúc");
+
+  // restore selected image panel if a step is selected
+  if(currentStep!==null){
+    const step = f.steps.find(s=>s.stt===currentStep);
+    if(step) showImage(key, step);
+  }
+}
+
+function resetImagePanel(){
+  const box = document.getElementById("imageBox");
+  const caption = document.getElementById("imageCaption");
+  box.innerHTML = `<div class="placeholder">Bấm vào 1 bước trong flow để xem ảnh tương ứng</div>`;
+  caption.textContent = "";
+}
+
+async function showImage(flowKey, step){
+  const store = await loadStore();
+  const rec = store[flowKey] && store[flowKey][step.stt];
+  const box = document.getElementById("imageBox");
+  const caption = document.getElementById("imageCaption");
+
+  caption.textContent = `${flowKey}${step.stt}. ${step.label}`;
+
+  if(rec && rec.value){
+    box.innerHTML = `<img src="${rec.value}" alt="${step.label}">`;
+  } else {
+    box.innerHTML = `<div class="placeholder">Chưa có ảnh cho bước này.<br>Sang tab "Ảnh" để upload / dán link.</div>`;
+  }
+}
+
+/* ============ SCREEN 2 ============ */
+async function renderScreen2(){
+  const wrap = document.getElementById("s2Groups");
+  wrap.innerHTML = "";
+  const store = await loadStore();
+
+  [...ROW1_KEYS, ...ROW2_KEYS].forEach(key=>{
+    const f = FLOWS[key];
+    const group = document.createElement("div");
+    group.className = "s2-group";
+    const h2 = document.createElement("h2");
+    h2.textContent = f.title;
+    group.appendChild(h2);
+
+    if(f.steps.length===0){
+      const p = document.createElement("div");
+      p.style.fontSize="13px";
+      p.style.color="var(--muted)";
+      p.textContent = "Chưa có bước chi tiết để gán ảnh.";
+      group.appendChild(p);
+    } else {
+      f.steps.forEach(step=>{
+        const rec = store[key] && store[key][step.stt];
+        const wrap = document.createElement("div");
+        wrap.className = "s2-row-wrap";
+
+        const rowId = `${key}_${step.stt}`;
+        const suggestedName = `${step.stt}_${slug(step.label)}`;
+        const noteVal = (rec && rec.note) ? rec.note : "";
+
+        wrap.innerHTML = `
+        <div class="s2-row">
+          <div class="s2-label"><span class="num">${key}${step.stt}</span>${step.label}<br><span style="color:var(--muted);font-size:11px;">gợi ý tên: ${suggestedName}</span></div>
+          <input type="text" id="txt_${rowId}" placeholder="Dán link ảnh (URL) tại đây..." value="${rec && rec.type==='link' ? rec.value : ''}">
+          <button class="btn btn-ghost btn-small" onclick="copyLink('${rowId}')">Copy</button>
+          <input type="file" id="file_${rowId}" accept="image/*">
+          <img class="s2-thumb" id="thumb_${rowId}" style="${rec && rec.value ? 'display:inline-block;' : ''}" src="${rec && rec.value ? rec.value : ''}">
+          <button class="btn btn-primary btn-small" onclick="submitRow('${key}', ${step.stt}, '${rowId}')">Lưu</button>
+          <span class="s2-status ${rec && rec.value ? 'ok':'empty'}" id="status_${rowId}">${rec && rec.value ? 'Đã lưu ✓' : 'Chưa có ảnh'}</span>
+        </div>
+        <div class="s2-note-label">Ghi chú cho bước này (double click vào bước ở màn hình chính để xem/ẩn):</div>
+        <textarea class="s2-note" id="note_${rowId}" placeholder="Nhập ghi chú...">${escapeHtml(noteVal)}</textarea>
+        `;
+        group.appendChild(wrap);
+      });
+    }
+    wrap.appendChild(group);
+  });
+
+  NOTES_ROW.filter(n=>n.hSteps && n.hSteps.length).forEach(n=>{
+    const group = document.createElement("div");
+    group.className = "s2-group";
+    const h2 = document.createElement("h2");
+    h2.textContent = `${n.code}. ${n.text}`;
+    group.appendChild(h2);
+
+    n.hSteps.forEach(step=>{
+      const rec = store[n.code] && store[n.code][step.stt];
+      const wrap = document.createElement("div");
+      wrap.className = "s2-row-wrap";
+
+      const rowId = `${n.code}_${step.stt}`;
+      const suggestedName = `${n.code}_${step.stt}_${slug(step.label)}`;
+      const noteVal = (rec && rec.note) ? rec.note : "";
+
+      wrap.innerHTML = `
+      <div class="s2-row">
+        <div class="s2-label"><span class="num">${n.code}.${step.stt}</span>Bước ${step.stt}: ${step.label}<br><span style="color:var(--muted);font-size:11px;">gợi ý tên: ${suggestedName}</span></div>
+        <input type="text" id="txt_${rowId}" placeholder="Dán link ảnh (URL) tại đây..." value="${rec && rec.type==='link' ? rec.value : ''}">
+        <button class="btn btn-ghost btn-small" onclick="copyLink('${rowId}')">Copy</button>
+        <input type="file" id="file_${rowId}" accept="image/*">
+        <img class="s2-thumb" id="thumb_${rowId}" style="${rec && rec.value ? 'display:inline-block;' : ''}" src="${rec && rec.value ? rec.value : ''}">
+        <button class="btn btn-primary btn-small" onclick="submitRow('${n.code}', ${step.stt}, '${rowId}')">Lưu</button>
+        <span class="s2-status ${rec && rec.value ? 'ok':'empty'}" id="status_${rowId}">${rec && rec.value ? 'Đã lưu ✓' : 'Chưa có ảnh'}</span>
+      </div>
+      <div class="s2-note-label">Ghi chú cho bước này (double click vào bước ở màn hình chính để xem/ẩn):</div>
+      <textarea class="s2-note" id="note_${rowId}" placeholder="Nhập ghi chú...">${escapeHtml(noteVal)}</textarea>
+      `;
+      group.appendChild(wrap);
+    });
+    wrap.appendChild(group);
+  });
+}
+
+function copyLink(rowId){
+  const input = document.getElementById(`txt_${rowId}`);
+  input.select();
+  input.setSelectionRange(0, 99999);
+  try{
+    navigator.clipboard.writeText(input.value || "");
+  }catch(e){
+    try{ document.execCommand("copy"); }catch(e2){}
+  }
+}
+
+async function submitRow(flowKey, stt, rowId){
+  const fileInput = document.getElementById(`file_${rowId}`);
+  const textInput = document.getElementById(`txt_${rowId}`);
+  const noteInput = document.getElementById(`note_${rowId}`);
+  const statusEl = document.getElementById(`status_${rowId}`);
+  const thumbEl = document.getElementById(`thumb_${rowId}`);
+  const noteVal = noteInput ? noteInput.value : "";
+
+  async function finish(type, value){
+    const store = await loadStore();
+    if(!store[flowKey]) store[flowKey] = {};
+    const prev = store[flowKey][stt] || {};
+    store[flowKey][stt] = {type: type!==undefined ? type : prev.type, value: value!==undefined ? value : prev.value, note: noteVal};
+    if(await saveStore(store)){
+      statusEl.textContent = "Đã lưu ✓";
+      statusEl.className = "s2-status ok";
+      if(value!==undefined){
+        thumbEl.src = value;
+        thumbEl.style.display = "inline-block";
+      }
+    }
+  }
+
+  if(fileInput.files && fileInput.files[0]){
+    statusEl.textContent = "Đang xử lý...";
+    statusEl.className = "s2-status empty";
+    try{
+      const compressed = await compressImage(fileInput.files[0]);
+      await finish("file", compressed);
+    }catch(err){
+      alert("Không đọc được file ảnh: " + err.message);
+      statusEl.textContent = "Chưa có ảnh";
+    }
+  } else if(textInput.value.trim()){
+    await finish("link", textInput.value.trim());
+  } else {
+    // không có ảnh mới (link/file) — vẫn cho phép chỉ lưu ghi chú nếu đã có ảnh từ trước, hoặc lưu ghi chú riêng
+    const store = await loadStore();
+    const prev = store[flowKey] && store[flowKey][stt];
+    if(prev && prev.value){
+      await finish(undefined, undefined);
+    } else if(noteVal.trim()){
+      await finish("note-only", "");
+    } else {
+      alert("Vui lòng dán link ảnh, chọn file, hoặc nhập ghi chú trước khi lưu.");
+    }
+  }
+}
+
+function renderNotesRow(){
+  const wrap = document.getElementById("notesRow");
+  wrap.innerHTML = "";
+  NOTES_ROW.forEach(n=>{
+    const hasFlow = !!(n.hSteps && n.hSteps.length);
+    const card = document.createElement("div");
+    card.className = "note-card" + (hasFlow ? " clickable":"") + (currentNote===n.code ? " active":"");
+    card.innerHTML = `<div class="line"><b>${n.code}.</b> ${n.text}</div>`;
+    if(hasFlow){
+      card.onclick = ()=>{ currentNote = n.code; currentNoteStep=null; resetNoteImagePanel(); showNoteView(); renderOverview(); renderNotesRow(); renderNoteFlow(n.code); };
+    }
+    wrap.appendChild(card);
+  });
+}
+
+/* ============ NOTE HORIZONTAL FLOW (Ghi chú) ============ */
+async function renderNoteFlow(code){
+  const n = NOTES_ROW.find(x=>x.code===code);
+  if(!n) return;
+  document.getElementById("noteFlowTitle").textContent = `${n.code}. ${n.text}`;
+  const row = document.getElementById("hFlowRow");
+  row.innerHTML = "";
+  const store = await loadStore();
+  const notesToShow = [];
+  n.hSteps.forEach((s, idx)=>{
+    if(idx>0){
+      const a = document.createElement("div");
+      a.className = "h-arrow";
+      row.appendChild(a);
+    }
+    const rec = store[code] && store[code][s.stt];
+    const hasImg = !!(rec && rec.value);
+    const hasNote = !!(rec && rec.note && rec.note.trim());
+    const hNoteKey = `${code}:${s.stt}`;
+    const isExpanded = expandedHNoteSteps.has(hNoteKey);
+    const node = document.createElement("div");
+    node.className = "h-flow-node" + (hasImg ? " has-image":"") + (currentNoteStep===s.stt ? " active":"");
+    node.innerHTML = `<div class="num">${s.stt}</div><div>${s.label}${hasNote ? ' 📝':''}</div>`;
+    node.onclick = ()=>{ currentNoteStep = s.stt; renderNoteFlow(code); showNoteImage(code, s); };
+    node.ondblclick = (e)=>{
+      e.preventDefault();
+      if(expandedHNoteSteps.has(hNoteKey)) expandedHNoteSteps.delete(hNoteKey);
+      else expandedHNoteSteps.add(hNoteKey);
+      renderNoteFlow(code);
+    };
+    row.appendChild(node);
+    if(isExpanded && hasNote) notesToShow.push({label:s.label, note:rec.note});
+  });
+  const noteArea = document.getElementById("hFlowNotes");
+  noteArea.innerHTML = "";
+  notesToShow.forEach(item=>{
+    const box = document.createElement("div");
+    box.className = "h-note-box";
+    box.innerHTML = `<b>${item.label}:</b><br>${item.note.replace(/</g,"&lt;")}`;
+    noteArea.appendChild(box);
+  });
+  if(currentNoteStep!==null){
+    const s = n.hSteps.find(x=>x.stt===currentNoteStep);
+    if(s) showNoteImage(code, s);
+  }
+}
+
+function resetNoteImagePanel(){
+  const box = document.getElementById("noteFlowImage");
+  box.innerHTML = `<div class="placeholder">Bấm vào 1 bước trong flow để xem ảnh tương ứng</div>`;
+}
+
+async function showNoteImage(code, step){
+  const store = await loadStore();
+  const rec = store[code] && store[code][step.stt];
+  const box = document.getElementById("noteFlowImage");
+  if(rec && rec.value){
+    box.innerHTML = `<img src="${rec.value}" alt="Bước ${step.stt}">`;
+  } else {
+    box.innerHTML = `<div class="placeholder">Chưa có ảnh cho bước này.<br>Sang tab "Ảnh" để upload / dán link.</div>`;
+  }
+}
+
+/* ============ INIT ============ */
+renderOverview();
+renderNotesRow();
+</script>
+</body>
+</html>
