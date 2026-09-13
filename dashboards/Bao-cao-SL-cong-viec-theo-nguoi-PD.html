@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Yêu cầu Phòng ban - SOL</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
+<style>
+  :root {
+    --color-primary: #0891B2;
+    --color-primary-light: #22D3EE;
+    --color-primary-dark: #155E75;
+    --color-secondary: #F59E0B;
+    --color-accent: #8B5CF6;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-danger: #EF4444;
+    --color-info: #3B82F6;
+    --color-bg: #F8FAFC;
+    --color-card-bg: #FFFFFF;
+    --color-border: #E2E8F0;
+    --color-text: #0F172A;
+    --color-text-light: #64748B;
+    --color-text-muted: #94A3B8;
+  }
+  * { transition: background-color .2s, border-color .2s, box-shadow .2s, transform .1s; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--color-bg); color: var(--color-text); margin:0; }
+  .card { background: var(--color-card-bg); border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06); border: 1px solid var(--color-border); }
+  .card:hover { box-shadow: 0 10px 15px rgba(0,0,0,0.08), 0 4px 6px rgba(0,0,0,0.04); transform: translateY(-2px); }
+  .text-display { font-size: 30px; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+  .text-h2 { font-size: 16px; font-weight: 600; }
+  .kpi-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; }
+  button { cursor: pointer; }
+  button:hover { filter: brightness(1.05); }
+  button:active { transform: scale(0.98); }
+  select, input[type="text"] {
+    border: 1px solid var(--color-border); border-radius: 8px; padding: 8px 12px; font-size: 14px; background: white; color: var(--color-text);
+  }
+  select:focus, input:focus { outline: 2px solid var(--color-primary-light); border-color: var(--color-primary); }
+  .tab-btn { padding: 10px 20px; border-radius: 8px 8px 0 0; font-weight: 600; font-size: 14px; border: none; background: transparent; color: var(--color-text-light); }
+  .tab-btn.active { background: var(--color-card-bg); color: var(--color-primary-dark); box-shadow: 0 -2px 0 var(--color-primary) inset; }
+  .tab-btn.disabled { color: var(--color-text-muted); cursor: not-allowed; }
+  .badge { display:inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .insight-item { display:flex; gap:14px; align-items:center; padding:16px; background:#F0F9FF; border-radius:12px; border:1px solid #BAE6FD; }
+  .insight-icon { font-size:28px; line-height:1; flex-shrink:0; }
+  .insight-stat { font-size:24px; font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums; }
+  .insight-label { font-size:13px; font-weight:600; color:var(--color-text); margin-top:2px; }
+  .insight-sub { font-size:11.5px; color:var(--color-text-light); margin-top:1px; }
+  ::-webkit-scrollbar { height:8px; width:8px; }
+  ::-webkit-scrollbar-thumb { background:#CBD5E1; border-radius:4px; }
+  .gridjs-search-input { border-radius:8px !important; }
+  .gridjs-th { background:#F1F5F9 !important; }
+  .accordion-header { cursor:pointer; display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-radius:8px; user-select:none; }
+  .accordion-chevron { transition: transform .2s; display:inline-block; }
+  .accordion-header.open .accordion-chevron { transform: rotate(90deg); }
+  .accordion-body { overflow:hidden; max-height:0; transition: max-height .25s ease; }
+  .accordion-body.open { max-height: 3000px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="bg-white border-b" style="border-color:var(--color-border);">
+  <div class="max-w-[1400px] mx-auto px-6 py-5 flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-xl font-bold" style="color:var(--color-primary-dark)">📊 Dashboard Số lượng Yêu cầu &amp; Quy trình - SOL</h1>
+      <p class="text-sm" style="color:var(--color-text-light)">SOL &middot; Nguồn: Data_dashboard_SL_quy_trình_SOL_8_tháng.xlsx &middot; Cập nhật: <span id="genDate"></span></p>
+    </div>
+    <button onclick="window.print()" class="text-sm font-semibold px-4 py-2 rounded-lg text-white" style="background:var(--color-primary)">⬇ Xuất / In</button>
+  </div>
+  <!-- PAGE TABS -->
+  <div class="max-w-[1400px] mx-auto px-6 flex gap-1">
+    <button id="tabBtn1" class="tab-btn active" onclick="showPage(1)">Trang 1 &middot; SL yêu cầu theo phòng ban</button>
+    <button id="tabBtn2" class="tab-btn" onclick="showPage(2)">Trang 2 &middot; SL quy trình theo tháng</button>
+    <button id="tabBtn3" class="tab-btn" onclick="showPage(3)">Trang 3 &middot; Quy trình theo phòng ban</button>
+    <button id="tabBtn4" class="tab-btn" onclick="showPage(4)">Trang 4 &middot; Cấp duyệt theo quy trình</button>
+  </div>
+</header>
+
+<main class="max-w-[1400px] mx-auto px-6 py-6">
+<div id="page1" class="page-content">
+  <div class="card mb-6 flex flex-wrap items-end gap-4">
+    <div>
+      <label class="block text-xs font-semibold mb-1" style="color:var(--color-text-light)">Tháng</label>
+      <select id="filterMonth" class="w-44">
+        <option value="all">Tất cả các tháng</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold mb-1" style="color:var(--color-text-light)">Phòng ban</label>
+      <select id="filterDept" class="w-64">
+        <option value="all">Tất cả phòng ban</option>
+      </select>
+    </div>
+    <div class="flex-1 min-w-[200px]">
+      <label class="block text-xs font-semibold mb-1" style="color:var(--color-text-light)">Tìm kiếm trong bảng chi tiết</label>
+      <input type="text" id="searchBox" placeholder="Nhập tên phòng ban..." class="w-full">
+    </div>
+    <button id="resetBtn" class="text-sm font-semibold px-4 py-2 rounded-lg border" style="border-color:var(--color-border); color:var(--color-text-light)">↺ Bỏ lọc</button>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="card">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="kpi-icon" style="background:#ECFEFF;">📥</div>
+        <span class="text-h2" style="color:var(--color-text-light)">Tổng yêu cầu</span>
+      </div>
+      <div class="text-display" id="kpiTotal" style="color:var(--color-primary-dark)">0</div>
+      <div class="text-xs mt-1" style="color:var(--color-text-muted)" id="kpiTotalSub">8 tháng &middot; 15 phòng ban</div>
+    </div>
+    <div class="card">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="kpi-icon" style="background:#FEF3C7;">📅</div>
+        <span class="text-h2" style="color:var(--color-text-light)">TB / tháng</span>
+      </div>
+      <div class="text-display" id="kpiAvgMonth" style="color:#B45309">0</div>
+      <div class="text-xs mt-1" style="color:var(--color-text-muted)" id="kpiAvgMonthSub">&nbsp;</div>
+    </div>
+    <div class="card">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="kpi-icon" style="background:#EDE9FE;">🏢</div>
+        <span class="text-h2" style="color:var(--color-text-light)">Phòng ban nhiều nhất</span>
+      </div>
+      <div class="text-display" style="font-size:22px; color:#5B21B6" id="kpiTopDept">-</div>
+      <div class="text-xs mt-1" style="color:var(--color-text-muted)" id="kpiTopDeptSub">&nbsp;</div>
+    </div>
+    <div class="card">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="kpi-icon" style="background:#FEE2E2;">📈</div>
+        <span class="text-h2" style="color:var(--color-text-light)">Cao điểm &amp; Thấp điểm</span>
+      </div>
+      <div class="flex items-center gap-4 mt-1">
+        <div>
+          <div class="text-display" style="font-size:22px; color:#B91C1C" id="kpiTopMonth">-</div>
+          <div class="text-xs" style="color:var(--color-text-muted)" id="kpiTopMonthSub">&nbsp;</div>
+        </div>
+        <div style="width:1px; height:34px; background:var(--color-border)"></div>
+        <div>
+          <div class="text-display" style="font-size:22px; color:#059669" id="kpiLowMonth">-</div>
+          <div class="text-xs" style="color:var(--color-text-muted)" id="kpiLowMonthSub">&nbsp;</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHART ROW 1 -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+    <div class="card lg:col-span-6">
+      <h3 class="text-h2 mb-3">Xu hướng tổng số yêu cầu theo tháng</h3>
+      <canvas id="lineChart" height="130"></canvas>
+    </div>
+    <div class="card lg:col-span-6">
+      <h3 class="text-h2 mb-1">Cơ cấu theo phòng ban</h3>
+      <p class="text-xs mb-1" style="color:var(--color-text-muted)">Dữ liệu 8 tháng (T1-T8) &middot; toàn bộ 15 phòng ban</p>
+      <div id="donutChart" style="height:420px;"></div>
+    </div>
+  </div>
+
+  <!-- CHART ROW 2 -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+    <div class="card lg:col-span-5">
+      <h3 class="text-h2 mb-3">Xếp hạng phòng ban theo tổng yêu cầu</h3>
+      <canvas id="rankChart" height="320"></canvas>
+    </div>
+    <div class="card lg:col-span-7">
+      <h3 class="text-h2 mb-3">Heatmap: Phòng ban &times; Tháng</h3>
+      <div id="heatmapChart" style="height:360px;"></div>
+    </div>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div id="emptyState" class="card text-center py-12 hidden">
+    <div class="text-4xl mb-3">📭</div>
+    <p style="color:var(--color-text-light)">Không có dữ liệu phù hợp với bộ lọc này.</p>
+    <button onclick="resetFilters()" class="mt-3 text-sm font-semibold px-4 py-2 rounded-lg text-white" style="background:var(--color-primary)">Bỏ lọc</button>
+  </div>
+
+  <!-- DATA TABLE -->
+  <div class="card">
+    <h3 class="text-h2 mb-3">Bảng chi tiết: Số lượng yêu cầu theo phòng ban &times; tháng</h3>
+    <div id="dataTable"></div>
+  </div>
+
+  <footer class="text-xs text-center py-8" style="color:var(--color-text-muted)">
+    Đã đọc 8 dòng (tháng) &times; 15 cột (phòng ban) = 120 ô dữ liệu từ Sheet "SL yc của phòng ban theo tháng". Tổng cộng khớp với TỔNG trong file gốc: 2,987 yêu cầu.
+  </footer>
+</div><!-- /page1 -->
+
+<!-- ======================= PAGE 2 ======================= -->
+<div id="page2" class="page-content hidden">
+
+  <!-- FILTERS -->
+  <div class="card mb-6 flex flex-wrap items-end gap-4">
+    <div>
+      <label class="block text-xs font-semibold mb-1" style="color:var(--color-text-light)">Tháng</label>
+      <select id="filterMonth2" class="w-44">
+        <option value="all">Tất cả các tháng</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold mb-1" style="color:var(--color-text-light)">Nhóm quy trình</label>
+      <select id="filterCat2" class="w-64">
+        <option value="all">Tất cả nhóm</option>
+      </select>
+    </div>
+    <div class="flex-1 min-w-[200px]">
+      <label class="block text-xs font-semibold mb-1" style="color:var(--color-text-light)">Tìm kiếm quy trình</label>
+      <input type="text" id="searchBox2" placeholder="Nhập tên hoặc mã quy trình..." class="w-full">
+    </div>
+    <button id="resetBtn2" class="text-sm font-semibold px-4 py-2 rounded-lg border" style="border-color:var(--color-border); color:var(--color-text-light)">↺ Bỏ lọc</button>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="card">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="kpi-icon" style="background:#ECFEFF;">📥</div>
+        <span class="text-h2" style="color:var(--color-text-light)">Tổng yêu cầu</span>
+      </div>
+      <div class="text-display" id="kpiTotal2" style="color:var(--color-primary-dark)">0</div>
+      <div class="text-xs mt-1" style="color:var(--color-text-muted)" id="kpiTotal2Sub">8 tháng &middot; 61 quy trình</div>
+    </div>
+    <div class="card">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="kpi-icon" style="background:#F0F9FF;">🧩</div>
+        <span class="text-h2" style="color:var(--color-text-light)">Quy trình đang vận hành</span>
+      </div>
+      <div class="text-display" id="kpiProcessCount2" style="color:#155E75">61</div>
+      <div class="text-xs mt-1" style="color:var(--color-text-muted)">TB 49 yêu cầu/quy trình</div>
+    </div>
+    <div class="card">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="kpi-icon" style="background:#EDE9FE;">🏆</div>
+        <span class="text-h2" style="color:var(--color-text-light)">Quy trình nhiều nhất</span>
+      </div>
+      <div class="text-display" style="font-size:14px; line-height:1.35; color:#5B21B6" id="kpiTopProcess2">-</div>
+      <div class="text-xs mt-1" style="color:var(--color-text-muted)" id="kpiTopProcess2Sub">&nbsp;</div>
+    </div>
+    <div class="card">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="kpi-icon" style="background:#FEE2E2;">📁</div>
+        <span class="text-h2" style="color:var(--color-text-light)">Nhóm chiếm nhiều nhất</span>
+      </div>
+      <div class="text-display" style="font-size:20px; color:#B91C1C" id="kpiTopCat2">-</div>
+      <div class="text-xs mt-1" style="color:var(--color-text-muted)" id="kpiTopCat2Sub">&nbsp;</div>
+    </div>
+  </div>
+
+  <!-- CHART ROW 1 -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+    <div class="card lg:col-span-6">
+      <h3 class="text-h2 mb-3">Xu hướng tổng số quy trình theo tháng</h3>
+      <canvas id="lineChart2" height="130"></canvas>
+    </div>
+    <div class="card lg:col-span-6">
+      <h3 class="text-h2 mb-1">Cơ cấu theo nhóm quy trình</h3>
+      <p class="text-xs mb-1" style="color:var(--color-text-muted)">Dữ liệu 8 tháng (T1-T8) &middot; 61 quy trình chia 5 nhóm</p>
+      <div id="donutChart2" style="height:340px;"></div>
+    </div>
+  </div>
+
+  <!-- CHART ROW 2 -->
+  <div class="grid grid-cols-1 gap-4 mb-4">
+    <div class="card">
+      <h3 class="text-h2 mb-3">Top 15 quy trình theo tổng số lượng</h3>
+      <div style="height:560px;"><canvas id="rankChart2"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CATEGORY REFERENCE TABLE -->
+  <div class="card mb-4">
+    <h3 class="text-h2 mb-1">Danh mục quy trình theo nhóm</h3>
+    <p class="text-xs mb-3" style="color:var(--color-text-muted)">Toàn bộ 61 quy trình, chia theo 5 nhóm và sắp xếp theo tổng số lượng giảm dần trong từng nhóm</p>
+    <div id="categoryRefTable2" class="overflow-x-auto"></div>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div id="emptyState2" class="card text-center py-12 hidden">
+    <div class="text-4xl mb-3">📭</div>
+    <p style="color:var(--color-text-light)">Không có dữ liệu phù hợp với bộ lọc này.</p>
+    <button onclick="resetFilters2()" class="mt-3 text-sm font-semibold px-4 py-2 rounded-lg text-white" style="background:var(--color-primary)">Bỏ lọc</button>
+  </div>
+
+  <!-- DATA TABLE -->
+  <div class="card">
+    <h3 class="text-h2 mb-3">Bảng chi tiết: Số lượng theo quy trình &times; tháng</h3>
+    <div id="dataTable2"></div>
+  </div>
+
+  <footer class="text-xs text-center py-8" style="color:var(--color-text-muted)">
+    Đã đọc 61 dòng (quy trình) &times; 8 cột (tháng) = 488 ô dữ liệu từ Sheet "SL quy trình tạo theo tháng". Tổng cộng khớp với Trang 1: 2,987 yêu cầu. Nhóm quy trình được phân loại tự động theo tiền tố mã (00xx=Memo Marketing, 10xx=Đề xuất chi phí/vận hành, 20xx=Đề nghị thanh toán, 30xx=Đề nghị tạm ứng, 40xx=Quyết toán/hoàn ứng).
+  </footer>
+</div><!-- /page2 -->
+
+<!-- ======================= PAGE 3 ======================= -->
+<div id="page3" class="page-content hidden">
+
+  <!-- FILTERS -->
+  <div class="card mb-6 flex flex-wrap items-end gap-4">
+    <div>
+      <label class="block text-xs font-semibold mb-1" style="color:var(--color-text-light)">Phòng ban</label>
+      <select id="filterDept3" class="w-64">
+        <option value="all">Tất cả phòng ban</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold mb-1" style="color:var(--color-text-light)">Nhóm quy trình</label>
+      <select id="filterCat3" class="w-56">
+        <option value="all">Tất cả nhóm</option>
+      </select>
+    </div>
+    <div class="flex-1 min-w-[200px]">
+      <label class="block text-xs font-semibold mb-1" style="color:var(--color-text-light)">Tìm kiếm quy trình</label>
+      <input type="text" id="searchBox3" placeholder="Nhập tên hoặc mã quy trình..." class="w-full">
+    </div>
+    <button id="resetBtn3" class="text-sm font-semibold px-4 py-2 rounded-lg border" style="border-color:var(--color-border); color:var(--color-text-light)">↺ Bỏ lọc</button>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="card">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="kpi-icon" style="background:#ECFEFF;">📥</div>
+        <span class="text-h2" style="color:var(--color-text-light)">Tổng yêu cầu</span>
+      </div>
+      <div class="text-display" id="kpiTotal3" style="color:var(--color-primary-dark)">0</div>
+      <div class="text-xs mt-1" style="color:var(--color-text-muted)" id="kpiTotal3Sub">15 phòng ban &middot; 8 tháng</div>
+    </div>
+    <div class="insight-item">
+      <span class="insight-icon">🧭</span>
+      <div>
+        <div class="insight-stat" style="color:#155E75" id="kpiDiverseDept3Stat">-</div>
+        <div class="insight-label" id="kpiDiverseDept3Name">-</div>
+        <div class="insight-sub">loại quy trình khác nhau đang dùng</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="kpi-icon" style="background:#EDE9FE;">🎯</div>
+        <span class="text-h2" style="color:var(--color-text-light)">Phòng ban chuyên biệt nhất</span>
+      </div>
+      <div class="text-display" style="font-size:18px; color:#5B21B6" id="kpiFocusDept3">-</div>
+      <div class="text-xs mt-1" style="color:var(--color-text-muted)" id="kpiFocusDept3Sub">&nbsp;</div>
+    </div>
+    <div class="card">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="kpi-icon" style="background:#FEE2E2;">📁</div>
+        <span class="text-h2" style="color:var(--color-text-light)">Nhóm chiếm nhiều nhất</span>
+      </div>
+      <div class="text-display" style="font-size:20px; color:#B91C1C" id="kpiTopCat3">-</div>
+      <div class="text-xs mt-1" style="color:var(--color-text-muted)" id="kpiTopCat3Sub">&nbsp;</div>
+    </div>
+  </div>
+
+  <!-- CHART ROW 1 -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+    <div class="card lg:col-span-7">
+      <h3 class="text-h2 mb-1">Cơ cấu nhóm quy trình theo phòng ban</h3>
+      <p class="text-xs mb-2" style="color:var(--color-text-muted)">Số cuối mỗi thanh: x/y/z/m/n = Memo Marketing / Đề xuất chi phí-vận hành / Đề nghị thanh toán / Đề nghị tạm ứng / Quyết toán-hoàn ứng</p>
+      <div id="stackedChart3" style="height:440px;"></div>
+    </div>
+    <div class="card lg:col-span-5">
+      <h3 class="text-h2 mb-3">Heatmap: Phòng ban &times; Nhóm quy trình</h3>
+      <div id="heatmapChart3" style="height:440px;"></div>
+    </div>
+  </div>
+
+  <!-- CATEGORY ACCORDION -->
+  <div class="card mb-4">
+    <h3 class="text-h2 mb-1">Danh mục quy trình theo nhóm</h3>
+    <p class="text-xs mb-3" style="color:var(--color-text-muted)">Bấm vào tên 1 nhóm để xem danh sách quy trình thuộc nhóm đó</p>
+    <div id="categoryAccordion3"></div>
+  </div>
+
+  <!-- CHART ROW 2 -->
+  <div class="grid grid-cols-1 gap-4 mb-4">
+    <div class="card">
+      <h3 class="text-h2 mb-3" id="rank3Title">Top quy trình theo tổng số lượng (tất cả phòng ban)</h3>
+      <div style="height:560px;"><canvas id="rankChart3"></canvas></div>
+    </div>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div id="emptyState3" class="card text-center py-12 hidden">
+    <div class="text-4xl mb-3">📭</div>
+    <p style="color:var(--color-text-light)">Không có dữ liệu phù hợp với bộ lọc này.</p>
+    <button onclick="resetFilters3()" class="mt-3 text-sm font-semibold px-4 py-2 rounded-lg text-white" style="background:var(--color-primary)">Bỏ lọc</button>
+  </div>
+
+  <!-- DATA TABLE -->
+  <div class="card">
+    <h3 class="text-h2 mb-3">Bảng chi tiết: Quy trình theo phòng ban &times; tháng</h3>
+    <div id="dataTable3"></div>
+  </div>
+
+  <footer class="text-xs text-center py-8" style="color:var(--color-text-muted)">
+    Đã đọc 215 dòng (phòng ban &times; quy trình đang dùng) từ Sheet "Quy trình theo từng phong ban". Tổng cộng khớp với Trang 1 &amp; 2: 2,987 yêu cầu.
+  </footer>
+</div><!-- /page3 -->
+
+<!-- ======================= PAGE 4 ======================= -->
+<div id="page4" class="page-content hidden">
+
+  <!-- FILTERS -->
+  <div class="card mb-6 flex flex-wrap items-end gap-4">
+    <div>
+      <label class="block text-xs font-semibold mb-1" style="color:var(--color-text-light)">Cấp duyệt cuối cùng</label>
+      <select id="filterApprover4" class="w-52">
+        <option value="all">Tất cả cấp duyệt</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold mb-1" style="color:var(--color-text-light)">Nhóm quy trình</label>
+      <select id="filterCat4" class="w-56">
+        <option value="all">Tất cả nhóm</option>
+      </select>
+    </div>
+    <div class="flex-1 min-w-[200px]">
+      <label class="block text-xs font-semibold mb-1" style="color:var(--color-text-light)">Tìm kiếm quy trình</label>
+      <input type="text" id="searchBox4" placeholder="Nhập tên hoặc mã quy trình..." class="w-full">
+    </div>
+    <button id="resetBtn4" class="text-sm font-semibold px-4 py-2 rounded-lg border" style="border-color:var(--color-border); color:var(--color-text-light)">↺ Bỏ lọc</button>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="card">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="kpi-icon" style="background:#FEF3C7;">🧑&zwj;⚖️</div>
+        <span class="text-h2" style="color:var(--color-text-light)">Tổng số chức danh PD</span>
+      </div>
+      <div class="text-display" id="kpiApproverCount4" style="color:#B45309">0</div>
+      <div class="text-xs mt-1" style="color:var(--color-text-muted)" id="kpiApproverCount4Sub">&nbsp;</div>
+    </div>
+    <div class="card">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="kpi-icon" style="background:#EDE9FE;">🏆</div>
+        <span class="text-h2" style="color:var(--color-text-light)">Cấp duyệt xử lý nhiều nhất</span>
+      </div>
+      <div class="text-display" style="font-size:22px; color:#5B21B6" id="kpiTopApprover4">-</div>
+      <div class="text-xs mt-1" style="color:var(--color-text-muted)" id="kpiTopApprover4Sub">&nbsp;</div>
+    </div>
+    <div class="card">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="kpi-icon" style="background:#FEE2E2;">📁</div>
+        <span class="text-h2" style="color:var(--color-text-light)">Nhóm chiếm nhiều nhất</span>
+      </div>
+      <div class="text-display" style="font-size:20px; color:#B91C1C" id="kpiTopCat4">-</div>
+      <div class="text-xs mt-1" style="color:var(--color-text-muted)" id="kpiTopCat4Sub">&nbsp;</div>
+    </div>
+  </div>
+
+  <!-- CHART ROW 1 -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+    <div class="card lg:col-span-6">
+      <h3 class="text-h2 mb-1">Cơ cấu theo cấp duyệt cuối cùng</h3>
+      <p class="text-xs mb-1" style="color:var(--color-text-muted)">Dữ liệu 8 tháng &middot; 61 quy trình &middot; 11 chức danh PD</p>
+      <div id="donutChart4" style="height:420px;"></div>
+    </div>
+    <div class="card lg:col-span-6">
+      <h3 class="text-h2 mb-3" id="rank4Title">Xếp hạng cấp duyệt theo tổng số lượng xử lý</h3>
+      <div id="rankChart4Wrap" style="max-height:600px; overflow-y:auto;">
+        <div id="rankChart4Inner" style="height:420px;"><canvas id="rankChart4"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHART ROW 2 -->
+  <div class="grid grid-cols-1 gap-4 mb-4">
+    <div class="card">
+      <h3 class="text-h2 mb-1">Cơ cấu nhóm quy trình theo cấp duyệt</h3>
+      <p class="text-xs mb-2" style="color:var(--color-text-muted)">Số cuối mỗi thanh: x/y/z/m/n = Memo Marketing / Đề xuất chi phí-vận hành / Đề nghị thanh toán / Đề nghị tạm ứng / Quyết toán-hoàn ứng</p>
+      <div id="stackedChart4" style="height:460px;"></div>
+    </div>
+  </div>
+
+  <!-- CATEGORY ACCORDION -->
+  <div class="card mb-4">
+    <h3 class="text-h2 mb-1">Danh mục quy trình theo nhóm</h3>
+    <p class="text-xs mb-3" style="color:var(--color-text-muted)">Bấm vào tên 1 nhóm để xem danh sách quy trình thuộc nhóm đó</p>
+    <div id="categoryAccordion4"></div>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div id="emptyState4" class="card text-center py-12 hidden">
+    <div class="text-4xl mb-3">📭</div>
+    <p style="color:var(--color-text-light)">Không có dữ liệu phù hợp với bộ lọc này.</p>
+    <button onclick="resetFilters4()" class="mt-3 text-sm font-semibold px-4 py-2 rounded-lg text-white" style="background:var(--color-primary)">Bỏ lọc</button>
+  </div>
+
+  <!-- DATA TABLE -->
+  <div class="card">
+    <h3 class="text-h2 mb-3">Bảng chi tiết: Quy trình &times; Cấp duyệt cuối cùng</h3>
+    <div class="flex flex-wrap items-end gap-4 mb-3">
+      <div>
+        <label class="block text-xs font-semibold mb-1" style="color:var(--color-text-light)">Lọc theo Duyệt cuối cùng</label>
+        <select id="tableFilterApprover4" class="w-52">
+          <option value="all">Tất cả cấp duyệt</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold mb-1" style="color:var(--color-text-light)">Lọc theo Nhóm</label>
+        <select id="tableFilterCat4" class="w-56">
+          <option value="all">Tất cả nhóm</option>
+        </select>
+      </div>
+    </div>
+    <div id="dataTable4"></div>
+  </div>
+
+  <footer class="text-xs text-center py-8" style="color:var(--color-text-muted)">
+    Đã đọc 65 dòng (quy trình &times; cấp duyệt) &times; 3 cột (Quy trình, Duyệt cuối cùng, Số lượng) từ Sheet "SL chức danh PD theo quy trình" &middot; 61 quy trình, 10 chức danh PD. <b>Lưu ý:</b> 4 quy trình (1020, 1030, 1330, 1360) có 2 dòng chức danh PD, mỗi dòng đều ghi nguyên số lượng gốc (không chia đôi) — nên tổng cộng trang này (3,405) cao hơn Trang 1/2/3 (2,987), không phải lỗi trình bày mà do cách nhập liệu của Sheet 4.
+  </footer>
+</div><!-- /page4 -->
+
+</main>
+
+<script>
+document.getElementById('genDate').textContent = new Date().toLocaleDateString('vi-VN');
+
+// ============ RAW DATA (từ Sheet 1) ============
+const RAW_DATA = [{"thang": "T1", "thang_so": 1, "phongban": "Bếp Tổng", "soluong": 35}, {"thang": "T1", "thang_so": 1, "phongban": "Khối Văn phòng - HO", "soluong": 4}, {"thang": "T1", "thang_so": 1, "phongban": "New brand", "soluong": 0}, {"thang": "T1", "thang_so": 1, "phongban": "Phòng Cung ứng", "soluong": 74}, {"thang": "T1", "thang_so": 1, "phongban": "Phòng Đào Tạo", "soluong": 9}, {"thang": "T1", "thang_so": 1, "phongban": "Phòng Dự án & Bảo trì", "soluong": 0}, {"thang": "T1", "thang_so": 1, "phongban": "Phòng Franchise", "soluong": 23}, {"thang": "T1", "thang_so": 1, "phongban": "Phòng Hành chính Nhân sự", "soluong": 41}, {"thang": "T1", "thang_so": 1, "phongban": "Phòng Kế Toán", "soluong": 6}, {"thang": "T1", "thang_so": 1, "phongban": "Phòng Marketing", "soluong": 62}, {"thang": "T1", "thang_so": 1, "phongban": "Phòng QC", "soluong": 9}, {"thang": "T1", "thang_so": 1, "phongban": "Phòng R&D 1", "soluong": 7}, {"thang": "T1", "thang_so": 1, "phongban": "Phòng R&D 2", "soluong": 3}, {"thang": "T1", "thang_so": 1, "phongban": "Phòng Vận Hành", "soluong": 18}, {"thang": "T1", "thang_so": 1, "phongban": "Nhà hàng", "soluong": 252}, {"thang": "T2", "thang_so": 2, "phongban": "Bếp Tổng", "soluong": 17}, {"thang": "T2", "thang_so": 2, "phongban": "Khối Văn phòng - HO", "soluong": 2}, {"thang": "T2", "thang_so": 2, "phongban": "New brand", "soluong": 0}, {"thang": "T2", "thang_so": 2, "phongban": "Phòng Cung ứng", "soluong": 55}, {"thang": "T2", "thang_so": 2, "phongban": "Phòng Đào Tạo", "soluong": 3}, {"thang": "T2", "thang_so": 2, "phongban": "Phòng Dự án & Bảo trì", "soluong": 1}, {"thang": "T2", "thang_so": 2, "phongban": "Phòng Franchise", "soluong": 3}, {"thang": "T2", "thang_so": 2, "phongban": "Phòng Hành chính Nhân sự", "soluong": 27}, {"thang": "T2", "thang_so": 2, "phongban": "Phòng Kế Toán", "soluong": 8}, {"thang": "T2", "thang_so": 2, "phongban": "Phòng Marketing", "soluong": 36}, {"thang": "T2", "thang_so": 2, "phongban": "Phòng QC", "soluong": 2}, {"thang": "T2", "thang_so": 2, "phongban": "Phòng R&D 1", "soluong": 4}, {"thang": "T2", "thang_so": 2, "phongban": "Phòng R&D 2", "soluong": 0}, {"thang": "T2", "thang_so": 2, "phongban": "Phòng Vận Hành", "soluong": 20}, {"thang": "T2", "thang_so": 2, "phongban": "Nhà hàng", "soluong": 176}, {"thang": "T3", "thang_so": 3, "phongban": "Bếp Tổng", "soluong": 13}, {"thang": "T3", "thang_so": 3, "phongban": "Khối Văn phòng - HO", "soluong": 5}, {"thang": "T3", "thang_so": 3, "phongban": "New brand", "soluong": 0}, {"thang": "T3", "thang_so": 3, "phongban": "Phòng Cung ứng", "soluong": 58}, {"thang": "T3", "thang_so": 3, "phongban": "Phòng Đào Tạo", "soluong": 2}, {"thang": "T3", "thang_so": 3, "phongban": "Phòng Dự án & Bảo trì", "soluong": 0}, {"thang": "T3", "thang_so": 3, "phongban": "Phòng Franchise", "soluong": 7}, {"thang": "T3", "thang_so": 3, "phongban": "Phòng Hành chính Nhân sự", "soluong": 33}, {"thang": "T3", "thang_so": 3, "phongban": "Phòng Kế Toán", "soluong": 6}, {"thang": "T3", "thang_so": 3, "phongban": "Phòng Marketing", "soluong": 60}, {"thang": "T3", "thang_so": 3, "phongban": "Phòng QC", "soluong": 1}, {"thang": "T3", "thang_so": 3, "phongban": "Phòng R&D 1", "soluong": 2}, {"thang": "T3", "thang_so": 3, "phongban": "Phòng R&D 2", "soluong": 17}, {"thang": "T3", "thang_so": 3, "phongban": "Phòng Vận Hành", "soluong": 24}, {"thang": "T3", "thang_so": 3, "phongban": "Nhà hàng", "soluong": 156}, {"thang": "T4", "thang_so": 4, "phongban": "Bếp Tổng", "soluong": 11}, {"thang": "T4", "thang_so": 4, "phongban": "Khối Văn phòng - HO", "soluong": 3}, {"thang": "T4", "thang_so": 4, "phongban": "New brand", "soluong": 0}, {"thang": "T4", "thang_so": 4, "phongban": "Phòng Cung ứng", "soluong": 10}, {"thang": "T4", "thang_so": 4, "phongban": "Phòng Đào Tạo", "soluong": 5}, {"thang": "T4", "thang_so": 4, "phongban": "Phòng Dự án & Bảo trì", "soluong": 0}, {"thang": "T4", "thang_so": 4, "phongban": "Phòng Franchise", "soluong": 3}, {"thang": "T4", "thang_so": 4, "phongban": "Phòng Hành chính Nhân sự", "soluong": 30}, {"thang": "T4", "thang_so": 4, "phongban": "Phòng Kế Toán", "soluong": 2}, {"thang": "T4", "thang_so": 4, "phongban": "Phòng Marketing", "soluong": 21}, {"thang": "T4", "thang_so": 4, "phongban": "Phòng QC", "soluong": 0}, {"thang": "T4", "thang_so": 4, "phongban": "Phòng R&D 1", "soluong": 0}, {"thang": "T4", "thang_so": 4, "phongban": "Phòng R&D 2", "soluong": 4}, {"thang": "T4", "thang_so": 4, "phongban": "Phòng Vận Hành", "soluong": 22}, {"thang": "T4", "thang_so": 4, "phongban": "Nhà hàng", "soluong": 122}, {"thang": "T5", "thang_so": 5, "phongban": "Bếp Tổng", "soluong": 16}, {"thang": "T5", "thang_so": 5, "phongban": "Khối Văn phòng - HO", "soluong": 4}, {"thang": "T5", "thang_so": 5, "phongban": "New brand", "soluong": 0}, {"thang": "T5", "thang_so": 5, "phongban": "Phòng Cung ứng", "soluong": 22}, {"thang": "T5", "thang_so": 5, "phongban": "Phòng Đào Tạo", "soluong": 2}, {"thang": "T5", "thang_so": 5, "phongban": "Phòng Dự án & Bảo trì", "soluong": 6}, {"thang": "T5", "thang_so": 5, "phongban": "Phòng Franchise", "soluong": 0}, {"thang": "T5", "thang_so": 5, "phongban": "Phòng Hành chính Nhân sự", "soluong": 58}, {"thang": "T5", "thang_so": 5, "phongban": "Phòng Kế Toán", "soluong": 2}, {"thang": "T5", "thang_so": 5, "phongban": "Phòng Marketing", "soluong": 51}, {"thang": "T5", "thang_so": 5, "phongban": "Phòng QC", "soluong": 4}, {"thang": "T5", "thang_so": 5, "phongban": "Phòng R&D 1", "soluong": 4}, {"thang": "T5", "thang_so": 5, "phongban": "Phòng R&D 2", "soluong": 4}, {"thang": "T5", "thang_so": 5, "phongban": "Phòng Vận Hành", "soluong": 29}, {"thang": "T5", "thang_so": 5, "phongban": "Nhà hàng", "soluong": 143}, {"thang": "T6", "thang_so": 6, "phongban": "Bếp Tổng", "soluong": 10}, {"thang": "T6", "thang_so": 6, "phongban": "Khối Văn phòng - HO", "soluong": 6}, {"thang": "T6", "thang_so": 6, "phongban": "New brand", "soluong": 2}, {"thang": "T6", "thang_so": 6, "phongban": "Phòng Cung ứng", "soluong": 45}, {"thang": "T6", "thang_so": 6, "phongban": "Phòng Đào Tạo", "soluong": 10}, {"thang": "T6", "thang_so": 6, "phongban": "Phòng Dự án & Bảo trì", "soluong": 4}, {"thang": "T6", "thang_so": 6, "phongban": "Phòng Franchise", "soluong": 0}, {"thang": "T6", "thang_so": 6, "phongban": "Phòng Hành chính Nhân sự", "soluong": 33}, {"thang": "T6", "thang_so": 6, "phongban": "Phòng Kế Toán", "soluong": 5}, {"thang": "T6", "thang_so": 6, "phongban": "Phòng Marketing", "soluong": 60}, {"thang": "T6", "thang_so": 6, "phongban": "Phòng QC", "soluong": 6}, {"thang": "T6", "thang_so": 6, "phongban": "Phòng R&D 1", "soluong": 3}, {"thang": "T6", "thang_so": 6, "phongban": "Phòng R&D 2", "soluong": 9}, {"thang": "T6", "thang_so": 6, "phongban": "Phòng Vận Hành", "soluong": 36}, {"thang": "T6", "thang_so": 6, "phongban": "Nhà hàng", "soluong": 123}, {"thang": "T7", "thang_so": 7, "phongban": "Bếp Tổng", "soluong": 15}, {"thang": "T7", "thang_so": 7, "phongban": "Khối Văn phòng - HO", "soluong": 3}, {"thang": "T7", "thang_so": 7, "phongban": "New brand", "soluong": 2}, {"thang": "T7", "thang_so": 7, "phongban": "Phòng Cung ứng", "soluong": 49}, {"thang": "T7", "thang_so": 7, "phongban": "Phòng Đào Tạo", "soluong": 7}, {"thang": "T7", "thang_so": 7, "phongban": "Phòng Dự án & Bảo trì", "soluong": 3}, {"thang": "T7", "thang_so": 7, "phongban": "Phòng Franchise", "soluong": 3}, {"thang": "T7", "thang_so": 7, "phongban": "Phòng Hành chính Nhân sự", "soluong": 39}, {"thang": "T7", "thang_so": 7, "phongban": "Phòng Kế Toán", "soluong": 9}, {"thang": "T7", "thang_so": 7, "phongban": "Phòng Marketing", "soluong": 58}, {"thang": "T7", "thang_so": 7, "phongban": "Phòng QC", "soluong": 8}, {"thang": "T7", "thang_so": 7, "phongban": "Phòng R&D 1", "soluong": 2}, {"thang": "T7", "thang_so": 7, "phongban": "Phòng R&D 2", "soluong": 2}, {"thang": "T7", "thang_so": 7, "phongban": "Phòng Vận Hành", "soluong": 43}, {"thang": "T7", "thang_so": 7, "phongban": "Nhà hàng", "soluong": 128}, {"thang": "T8", "thang_so": 8, "phongban": "Bếp Tổng", "soluong": 14}, {"thang": "T8", "thang_so": 8, "phongban": "Khối Văn phòng - HO", "soluong": 3}, {"thang": "T8", "thang_so": 8, "phongban": "New brand", "soluong": 5}, {"thang": "T8", "thang_so": 8, "phongban": "Phòng Cung ứng", "soluong": 45}, {"thang": "T8", "thang_so": 8, "phongban": "Phòng Đào Tạo", "soluong": 4}, {"thang": "T8", "thang_so": 8, "phongban": "Phòng Dự án & Bảo trì", "soluong": 6}, {"thang": "T8", "thang_so": 8, "phongban": "Phòng Franchise", "soluong": 2}, {"thang": "T8", "thang_so": 8, "phongban": "Phòng Hành chính Nhân sự", "soluong": 47}, {"thang": "T8", "thang_so": 8, "phongban": "Phòng Kế Toán", "soluong": 14}, {"thang": "T8", "thang_so": 8, "phongban": "Phòng Marketing", "soluong": 100}, {"thang": "T8", "thang_so": 8, "phongban": "Phòng QC", "soluong": 3}, {"thang": "T8", "thang_so": 8, "phongban": "Phòng R&D 1", "soluong": 1}, {"thang": "T8", "thang_so": 8, "phongban": "Phòng R&D 2", "soluong": 4}, {"thang": "T8", "thang_so": 8, "phongban": "Phòng Vận Hành", "soluong": 24}, {"thang": "T8", "thang_so": 8, "phongban": "Nhà hàng", "soluong": 133}];
+
+const DEPTS = ["Bếp Tổng", "Khối Văn phòng - HO", "New brand", "Phòng Cung ứng", "Phòng Đào Tạo", "Phòng Dự án & Bảo trì", "Phòng Franchise", "Phòng Hành chính Nhân sự", "Phòng Kế Toán", "Phòng Marketing", "Phòng QC", "Phòng R&D 1", "Phòng R&D 2", "Phòng Vận Hành", "Nhà hàng"];
+const DEPT_TOTALS = {"Bếp Tổng": 131, "Khối Văn phòng - HO": 30, "New brand": 9, "Phòng Cung ứng": 358, "Phòng Đào Tạo": 42, "Phòng Dự án & Bảo trì": 20, "Phòng Franchise": 41, "Phòng Hành chính Nhân sự": 308, "Phòng Kế Toán": 52, "Phòng Marketing": 448, "Phòng QC": 33, "Phòng R&D 1": 23, "Phòng R&D 2": 43, "Phòng Vận Hành": 216, "Nhà hàng": 1233};
+const MONTHS = ["T1","T2","T3","T4","T5","T6","T7","T8"];
+const MONTH_TOTALS = [543, 354, 384, 233, 345, 352, 371, 405];
+const GRAND_TOTAL = 2987;
+
+const CHART_COLORS = ['#0891B2','#F59E0B','#8B5CF6','#10B981','#EC4899','#3B82F6','#F97316','#14B8A6',
+                       '#A855F7','#84CC16','#EF4444','#06B6D4','#D946EF','#EAB308','#64748B'];
+
+function fmtInt(v){ return v.toLocaleString('vi-VN'); }
+
+// ============ STATE ============
+let state = { month: 'all', dept: 'all', search: '' };
+let charts = {};
+
+// ============ POPULATE FILTER OPTIONS ============
+const monthSel = document.getElementById('filterMonth');
+MONTHS.forEach(m => {
+  const opt = document.createElement('option'); opt.value = m; opt.textContent = m; monthSel.appendChild(opt);
+});
+const deptSel = document.getElementById('filterDept');
+[...DEPTS].sort((a,b)=>DEPT_TOTALS[b]-DEPT_TOTALS[a]).forEach(d => {
+  const opt = document.createElement('option'); opt.value = d; opt.textContent = d; deptSel.appendChild(opt);
+});
+
+// ============ FILTERED DATA ============
+function getFiltered(){
+  return RAW_DATA.filter(r =>
+    (state.month === 'all' || r.thang === state.month) &&
+    (state.dept === 'all' || r.phongban === state.dept)
+  );
+}
+
+// ============ KPI ============
+function renderKPI(filtered){
+  const total = filtered.reduce((s,r)=>s+r.soluong,0);
+  document.getElementById('kpiTotal').textContent = fmtInt(total);
+
+  const monthsInView = state.month === 'all' ? MONTHS.length : 1;
+  document.getElementById('kpiAvgMonth').textContent = fmtInt(Math.round(total/monthsInView));
+  document.getElementById('kpiAvgMonthSub').textContent = state.month==='all' ? '8 tháng (T1-T8)' : `Riêng ${state.month}`;
+
+  // top dept trong phạm vi filter hiện tại
+  const byDept = {};
+  filtered.forEach(r=>{ byDept[r.phongban]=(byDept[r.phongban]||0)+r.soluong; });
+  const topDeptEntry = Object.entries(byDept).sort((a,b)=>b[1]-a[1])[0];
+  if (topDeptEntry) {
+    document.getElementById('kpiTopDept').textContent = topDeptEntry[0];
+    document.getElementById('kpiTopDeptSub').textContent = `${fmtInt(topDeptEntry[1])} yêu cầu (${(topDeptEntry[1]/total*100).toFixed(1)}%)`;
+  } else {
+    document.getElementById('kpiTopDept').textContent = '-';
+    document.getElementById('kpiTopDeptSub').textContent = '';
+  }
+
+  // top month & low month trong phạm vi filter
+  const byMonth = {};
+  filtered.forEach(r=>{ byMonth[r.thang]=(byMonth[r.thang]||0)+r.soluong; });
+  const byMonthSorted = Object.entries(byMonth).sort((a,b)=>b[1]-a[1]);
+  const topMonthEntry = byMonthSorted[0];
+  const lowMonthEntry = byMonthSorted[byMonthSorted.length-1];
+  if (topMonthEntry) {
+    document.getElementById('kpiTopMonth').textContent = topMonthEntry[0];
+    document.getElementById('kpiTopMonthSub').textContent = `Cao nhất · ${fmtInt(topMonthEntry[1])} yêu cầu`;
+  } else {
+    document.getElementById('kpiTopMonth').textContent = '-';
+    document.getElementById('kpiTopMonthSub').textContent = '';
+  }
+  if (lowMonthEntry) {
+    document.getElementById('kpiLowMonth').textContent = lowMonthEntry[0];
+    document.getElementById('kpiLowMonthSub').textContent = `Thấp nhất · ${fmtInt(lowMonthEntry[1])} yêu cầu`;
+  } else {
+    document.getElementById('kpiLowMonth').textContent = '-';
+    document.getElementById('kpiLowMonthSub').textContent = '';
+  }
+}
+
+// ============ CHARTS ============
+function renderLineChart(filtered){
+  const byMonth = {};
+  MONTHS.forEach(m=>byMonth[m]=0);
+  filtered.forEach(r=>{ byMonth[r.thang]+=r.soluong; });
+  const ctx = document.getElementById('lineChart');
+  if (charts.line) charts.line.destroy();
+  charts.line = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: MONTHS,
+      datasets: [{
+        label: 'Số yêu cầu',
+        data: MONTHS.map(m=>byMonth[m]),
+        borderColor: '#0891B2',
+        backgroundColor: 'rgba(8,145,178,0.12)',
+        fill: true, tension: 0.35, pointRadius: 5, pointBackgroundColor: '#0891B2', pointHoverRadius: 7, borderWidth: 3
+      }]
+    },
+    plugins: [ChartDataLabels],
+    options: {
+      responsive:true,
+      layout: { padding: { top: 22 } },
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:(c)=>` ${fmtInt(c.parsed.y)} yêu cầu`}},
+        datalabels:{
+          align:'top', anchor:'end', offset:6, color:'#0F172A', font:{weight:700, size:12},
+          formatter: v => fmtInt(v)
+        }
+      },
+      scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>fmtInt(v) } } },
+      onClick: (evt, elements) => {
+        if (elements.length){
+          const idx = elements[0].index;
+          const m = MONTHS[idx];
+          state.month = (state.month === m) ? 'all' : m;
+          monthSel.value = state.month;
+          renderAll();
+        }
+      }
+    }
+  });
+}
+
+let donutInstance = null;
+function renderDonutChart(filtered){
+  const byDept = {};
+  filtered.forEach(r=>{ byDept[r.phongban]=(byDept[r.phongban]||0)+r.soluong; });
+  const sorted = Object.entries(byDept).sort((a,b)=>b[1]-a[1]);
+  const total = sorted.reduce((s,[,v])=>s+v,0);
+
+  const el = document.getElementById('donutChart');
+  if (!donutInstance) donutInstance = echarts.init(el);
+
+  const data = sorted.map(([name,value],i)=>({ name, value, itemStyle:{ color: CHART_COLORS[i % CHART_COLORS.length] } }));
+
+  donutInstance.setOption({
+    tooltip: { trigger:'item', formatter: p => `${p.name}<br/><b>${fmtInt(p.value)}</b> yêu cầu (${p.percent}%)` },
+    series: [{
+      type: 'pie',
+      radius: ['38%','65%'],
+      center: ['50%','50%'],
+      avoidLabelOverlap: true,
+      label: {
+        show: true,
+        formatter: p => `${p.percent}% - ${p.name}`,
+        fontSize: 11,
+        lineHeight: 14
+      },
+      labelLine: { show:true, length:14, length2:10 },
+      labelLayout: { hideOverlap:false },
+      data
+    }]
+  });
+  window.addEventListener('resize', ()=>donutInstance.resize());
+}
+
+
+function renderRankChart(filtered){
+  const byDept = {};
+  filtered.forEach(r=>{ byDept[r.phongban]=(byDept[r.phongban]||0)+r.soluong; });
+  const sorted = Object.entries(byDept).sort((a,b)=>b[1]-a[1]);
+  const ctx = document.getElementById('rankChart');
+  if (charts.rank) charts.rank.destroy();
+  charts.rank = new Chart(ctx, {
+    type: 'bar',
+    plugins: [ChartDataLabels],
+    data: {
+      labels: sorted.map(([k])=>k),
+      datasets: [{
+        data: sorted.map(([,v])=>v),
+        backgroundColor: sorted.map(([k])=> k===state.dept ? '#F59E0B' : '#0891B2'),
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive:true,
+      layout: { padding: { right: 36 } },
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:(c)=>` ${fmtInt(c.parsed.x)} yêu cầu`}},
+        datalabels:{
+          anchor:'end', align:'right', offset:4, color:'#0F172A', font:{weight:700, size:11},
+          formatter: v => fmtInt(v)
+        }
+      },
+      scales:{ x:{ beginAtZero:true, ticks:{ callback:v=>fmtInt(v) } }, y:{ ticks:{ font:{size:11} } } },
+      onClick: (evt, elements) => {
+        if (elements.length){
+          const idx = elements[0].index;
+          const d = sorted[idx][0];
+          state.dept = (state.dept === d) ? 'all' : d;
+          deptSel.value = state.dept;
+          renderAll();
+        }
+      }
+    }
+  });
+}
+
+let heatmapInstance = null;
+function renderHeatmap(){
+  // Heatmap luôn hiển thị toàn bộ ma trận, filter chỉ highlight; giữ nguyên context toàn cảnh
+  const el = document.getElementById('heatmapChart');
+  if (!heatmapInstance) heatmapInstance = echarts.init(el);
+
+  const deptsSorted = [...DEPTS].sort((a,b)=>DEPT_TOTALS[a]-DEPT_TOTALS[b]);
+  const matrix = [];
+  let maxVal = 0;
+  RAW_DATA.forEach(r=>{
+    const x = MONTHS.indexOf(r.thang);
+    const y = deptsSorted.indexOf(r.phongban);
+    matrix.push([x, y, r.soluong]);
+    if (r.soluong > maxVal) maxVal = r.soluong;
+  });
+
+  heatmapInstance.setOption({
+    tooltip: { position:'top', formatter: p => `${deptsSorted[p.data[1]]}<br/>${MONTHS[p.data[0]]}: <b>${fmtInt(p.data[2])}</b> yêu cầu` },
+    grid: { left: 170, right: 20, top: 10, bottom: 30 },
+    xAxis: { type:'category', data: MONTHS, splitArea:{show:true}, axisLabel:{fontSize:11} },
+    yAxis: { type:'category', data: deptsSorted, splitArea:{show:true}, axisLabel:{fontSize:11} },
+    visualMap: {
+      min:0, max:maxVal, calculable:true, orient:'horizontal', left:'center', bottom:-5,
+      inRange:{ color:['#ECFEFF','#67E8F9','#0891B2','#155E75'] }, textStyle:{fontSize:10}
+    },
+    series: [{
+      type:'heatmap', data: matrix, label:{show:true, fontSize:9, color:'#0F172A',
+        formatter: p => p.data[2] > 0 ? p.data[2] : ''
+      },
+      emphasis:{ itemStyle:{ shadowBlur:8, shadowColor:'rgba(0,0,0,0.3)' } }
+    }]
+  });
+  window.addEventListener('resize', ()=>heatmapInstance.resize());
+}
+
+// ============ TABLE ============
+let gridInstance = null;
+function renderTable(){
+  const pivot = {};
+  DEPTS.forEach(d=>{ pivot[d] = { phongban: d }; MONTHS.forEach(m=>pivot[d][m]=0); pivot[d].tong = 0; });
+  RAW_DATA.forEach(r=>{ pivot[r.phongban][r.thang] = r.soluong; pivot[r.phongban].tong += r.soluong; });
+
+  let rows = Object.values(pivot);
+  if (state.dept !== 'all') rows = rows.filter(r=>r.phongban === state.dept);
+  if (state.search) rows = rows.filter(r=>r.phongban.toLowerCase().includes(state.search.toLowerCase()));
+  rows.sort((a,b)=>b.tong-a.tong);
+
+  const columns = ['Phòng ban', ...MONTHS, 'Tổng cộng'];
+  const data = rows.map(r => [r.phongban, ...MONTHS.map(m=>r[m]), r.tong]);
+
+  const container = document.getElementById('dataTable');
+  container.innerHTML = '';
+  if (data.length === 0){
+    container.innerHTML = '<div class="text-center py-8 text-sm" style="color:var(--color-text-muted)">Không có dữ liệu phù hợp với bộ lọc này.</div>';
+    return;
+  }
+  gridInstance = new gridjs.Grid({
+    columns,
+    data,
+    sort: true,
+    pagination: { limit: 15 },
+    className: { table: 'text-sm' },
+    style: { th: { 'font-size':'12px' }, td: { 'font-size':'13px' } }
+  }).render(container);
+}
+
+// ============ RENDER ALL ============
+function renderAll(){
+  const filtered = getFiltered();
+  document.getElementById('emptyState').classList.toggle('hidden', filtered.length > 0);
+  renderKPI(filtered);
+  renderLineChart(filtered.length ? getFiltered() : RAW_DATA); // line theo tháng luôn dùng filter dept (nếu có) nhưng show đủ tháng
+  renderDonutChart(state.month==='all' ? RAW_DATA : filtered);
+  renderRankChart(state.month==='all' ? RAW_DATA : filtered);
+  renderTable();
+}
+
+function resetFilters(){
+  state = { month:'all', dept:'all', search:'' };
+  monthSel.value = 'all'; deptSel.value = 'all'; document.getElementById('searchBox').value = '';
+  renderAll();
+}
+
+// ============ EVENTS ============
+monthSel.addEventListener('change', e => { state.month = e.target.value; renderAll(); });
+deptSel.addEventListener('change', e => { state.dept = e.target.value; renderAll(); });
+document.getElementById('searchBox').addEventListener('input', e => { state.search = e.target.value; renderTable(); });
+document.getElementById('resetBtn').addEventListener('click', resetFilters);
+
+// ============ INIT PAGE 1 ============
+renderAll();
+renderHeatmap();
+
+// ======================================================================================
+// ================================ PAGE NAVIGATION =====================================
+// ======================================================================================
+const pageInitialized = { 1:true, 2:false, 3:false, 4:false };
+function showPage(n){
+  [1,2,3,4].forEach(i=>{
+    document.getElementById('page'+i).classList.toggle('hidden', i!==n);
+    document.getElementById('tabBtn'+i).classList.toggle('active', i===n);
+  });
+  if (!pageInitialized[n]){
+    if (n===2) initPage2();
+    if (n===3) initPage3();
+    if (n===4) initPage4();
+    pageInitialized[n] = true;
+  } else {
+    // đã init trước đó -> resize lại các chart ECharts (Chart.js tự responsive)
+    if (n===2){ if(donut2Instance) donut2Instance.resize(); }
+    if (n===3){ if(stacked3Instance) stacked3Instance.resize(); if(heatmap3Instance) heatmap3Instance.resize(); }
+    if (n===4){ if(donut4Instance) donut4Instance.resize(); if(stacked4Instance) stacked4Instance.resize(); }
+  }
+}
+
+// ======================================================================================
+// ==================================== PAGE 2 DATA =====================================
+// ======================================================================================
+const PROCESSES2 = [{"code": "0010", "name": "0010 - Memo chương trình Marketing  (Fast Casual + Tất cả nhà hàng)", "cat": "Memo Marketing", "months": {"T1": 3, "T2": 1, "T3": 2, "T4": 0, "T5": 7, "T6": 3, "T7": 2, "T8": 9}, "total": 27}, {"code": "0011", "name": "0011 - Memo chương trình Marketing  (Fast Casual +KRU)", "cat": "Memo Marketing", "months": {"T1": 15, "T2": 6, "T3": 13, "T4": 4, "T5": 4, "T6": 4, "T7": 6, "T8": 10}, "total": 62}, {"code": "0020", "name": "0020 - Memo chương trình Marketing ( Casual)", "cat": "Memo Marketing", "months": {"T1": 1, "T2": 0, "T3": 2, "T4": 0, "T5": 4, "T6": 5, "T7": 1, "T8": 1}, "total": 14}, {"code": "0030", "name": "0030 - Memo chương trình Marketing (Casual Dinning)", "cat": "Memo Marketing", "months": {"T1": 6, "T2": 5, "T3": 6, "T4": 2, "T5": 5, "T6": 11, "T7": 6, "T8": 9}, "total": 50}, {"code": "0040", "name": "0040 - Memo chương trình Marketing (Fine Dinning)", "cat": "Memo Marketing", "months": {"T1": 4, "T2": 1, "T3": 3, "T4": 5, "T5": 1, "T6": 3, "T7": 4, "T8": 4}, "total": 25}, {"code": "0050", "name": "0050 - Memo chương trình Marketing  (Franchise) - FM", "cat": "Memo Marketing", "months": {"T1": 8, "T2": 1, "T3": 1, "T4": 0, "T5": 0, "T6": 0, "T7": 2, "T8": 0}, "total": 12}, {"code": "0060", "name": "0060 - Memo chương trình Marketing  (Franchise) - CEO", "cat": "Memo Marketing", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 5, "T5": 3, "T6": 6, "T7": 0, "T8": 2}, "total": 16}, {"code": "1000", "name": "1000 - Phiếu đặt nguyên liệu phòng gia vị", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 1, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"code": "1010", "name": "1010 - Đề xuất tiếp khách, thử món", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 8, "T2": 13, "T3": 6, "T4": 6, "T5": 11, "T6": 11, "T7": 4, "T8": 13}, "total": 72}, {"code": "1020", "name": "1020 - Đề xuất thiết bị CNTT (< 3 Triệu) Chỉ áp dụng cho Nhà Hàng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 2, "T2": 1, "T3": 0, "T4": 0, "T5": 5, "T6": 1, "T7": 0, "T8": 1}, "total": 10}, {"code": "1021", "name": "1021 - Đề xuất thiết bị CNTT  (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 4, "T2": 0, "T3": 3, "T4": 2, "T5": 1, "T6": 5, "T7": 5, "T8": 1}, "total": 21}, {"code": "1022", "name": "1022 - Đề xuất thiết bị CNTT ( > 10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 3, "T3": 1, "T4": 1, "T5": 4, "T6": 1, "T7": 1, "T8": 1}, "total": 12}, {"code": "1030", "name": "1030 - Đề xuất mua sắm, chi phí (< 3 Triệu)  Chỉ áp dụng cho Nhà Hàng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 62, "T2": 28, "T3": 31, "T4": 14, "T5": 27, "T6": 18, "T7": 32, "T8": 36}, "total": 248}, {"code": "1031", "name": "1031 - Đề xuất mua sắm,chi phí (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 31, "T2": 30, "T3": 21, "T4": 19, "T5": 26, "T6": 27, "T7": 25, "T8": 25}, "total": 204}, {"code": "1032", "name": "1032 - Đề xuất mua sắm, chi phí ( > 10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 20, "T2": 6, "T3": 13, "T4": 9, "T5": 9, "T6": 8, "T7": 10, "T8": 15}, "total": 90}, {"code": "1040", "name": "1040 - Đề xuất sửa chữa (< 3 Triệu)  Chỉ áp dụng cho Nhà Hàng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 34, "T2": 20, "T3": 27, "T4": 26, "T5": 24, "T6": 17, "T7": 22, "T8": 19}, "total": 189}, {"code": "1041", "name": "1041 - Đề xuất sửa chữa (3Triệu ≤ 10 Triệu) khối Vp dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 8, "T2": 1, "T3": 4, "T4": 5, "T5": 12, "T6": 8, "T7": 13, "T8": 10}, "total": 61}, {"code": "1042", "name": "1042 - Đề xuất sửa chữa ( > 10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 5, "T2": 0, "T3": 4, "T4": 3, "T5": 1, "T6": 2, "T7": 2, "T8": 1}, "total": 18}, {"code": "1050", "name": "1050 - Đề xuất first order nhà hàng mới", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 2, "T2": 0, "T3": 0, "T4": 3, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 5}, {"code": "1060", "name": "1060 - Đề xuất tạo mới/ đổi NCC", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 1, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"code": "1070", "name": "1070 - Duyệt giá mua hàng tháng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 1, "T3": 1, "T4": 0, "T5": 1, "T6": 1, "T7": 1, "T8": 1}, "total": 7}, {"code": "1080", "name": "1080 - Đề xuất Tính OT (làm thêm giờ)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 3, "T2": 3, "T3": 2, "T4": 3, "T5": 2, "T6": 1, "T7": 0, "T8": 0}, "total": 14}, {"code": "1090", "name": "1090 - Đề xuất Đi công tác", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 7, "T2": 3, "T3": 2, "T4": 0, "T5": 10, "T6": 5, "T7": 0, "T8": 0}, "total": 27}, {"code": "1111", "name": "1111 - Đề Xuất Điều Chỉnh Staffing/ Định Biên Phòng Ban", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 2, "T8": 0}, "total": 2}, {"code": "1120", "name": "1120 - Đề xuất Đồng phục (tổng hợp)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 3, "T6": 0, "T7": 1, "T8": 0}, "total": 4}, {"code": "1130", "name": "1130 - Đề xuất thanh lý tài sản", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 2, "T3": 1, "T4": 3, "T5": 2, "T6": 0, "T7": 2, "T8": 0}, "total": 11}, {"code": "1140", "name": "1140 - Đề xuất chỉnh bill", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 0, "T3": 1, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"code": "1160", "name": "1160 - Đề Xuất Tuyển Dụng (Văn Phòng+Bếp Tổng)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 3, "T2": 5, "T3": 2, "T4": 3, "T5": 1, "T6": 2, "T7": 1, "T8": 4}, "total": 21}, {"code": "1170", "name": "1170 - Đề Xuất Tuyển Dụng Nhà Hàng ( Cấp Nhân Viên)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 22, "T2": 18, "T3": 4, "T4": 4, "T5": 4, "T6": 0, "T7": 0, "T8": 1}, "total": 53}, {"code": "1180", "name": "1180 - Đề Xuất Tuyển Dụng Nhà Hàng (Cấp Quản Lý)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 9, "T3": 4, "T4": 1, "T5": 1, "T6": 0, "T7": 0, "T8": 0}, "total": 15}, {"code": "1210", "name": "1210 - Đề xuất Chi phí MKT", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 20, "T2": 10, "T3": 11, "T4": 3, "T5": 11, "T6": 11, "T7": 13, "T8": 12}, "total": 91}, {"code": "1211", "name": "1211 - Đề xuất Chi phí MKT (MWK & S79)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 2, "T2": 3, "T3": 6, "T4": 1, "T5": 2, "T6": 4, "T7": 3, "T8": 7}, "total": 28}, {"code": "1212", "name": "1212 - Đề xuất Chi phí MKT (< 10Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 5, "T6": 6, "T7": 13, "T8": 29}, "total": 53}, {"code": "1220", "name": "1220 - Đề xuất thay đổi định mức sản phẩm", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 8, "T2": 5, "T3": 5, "T4": 2, "T5": 5, "T6": 6, "T7": 2, "T8": 1}, "total": 34}, {"code": "1230", "name": "1230 - Quy trình Phát triển đặc biệt - Special Development Process", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 2, "T2": 1, "T3": 1, "T4": 2, "T5": 3, "T6": 8, "T7": 1, "T8": 3}, "total": 21}, {"code": "1260", "name": "1260 - Giải trình công làm việc hàng tháng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"code": "1290", "name": "1290 - Cấp Tài khoản bán hàng PM POS", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 1, "T7": 0, "T8": 0}, "total": 3}, {"code": "1300", "name": "1300 - Duyệt so sánh giá", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 2, "T2": 3, "T3": 1, "T4": 0, "T5": 1, "T6": 2, "T7": 1, "T8": 0}, "total": 10}, {"code": "1310", "name": "1310 - Đề Xuất Chi Phí R&D Tháng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 2, "T4": 2, "T5": 2, "T6": 0, "T7": 0, "T8": 0}, "total": 6}, {"code": "1330", "name": "1330 - Đề xuất Hủy Nguyên Vật Liệu - Hàng Hóa", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 42, "T2": 36, "T3": 31, "T4": 16, "T5": 18, "T6": 8, "T7": 2, "T8": 3}, "total": 156}, {"code": "1340", "name": "1340 - Đề xuất bán Voucher", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"code": "1350", "name": "1350 - Đề xuất hủy CCDC (<3 triệu) cho Nhà hàng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 1, "T8": 4}, "total": 5}, {"code": "1360", "name": "1360 - Đề xuất hủy CCDC (3 triệu ≤ 10 triệu) cho Nhà hàng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 4}, "total": 4}, {"code": "2010", "name": "2010 - Đề nghị thanh toán (<3 Triệu) cho Nhà Hàng", "cat": "Đề nghị thanh toán", "months": {"T1": 2, "T2": 4, "T3": 2, "T4": 3, "T5": 1, "T6": 2, "T7": 2, "T8": 0}, "total": 16}, {"code": "2011", "name": "2011 - Đề nghị thanh toán ( ≤10 Triệu) cho Fine Dining", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 1, "T8": 0}, "total": 1}, {"code": "2020", "name": "2020 - Đề nghị thanh toán (thường xuyên)", "cat": "Đề nghị thanh toán", "months": {"T1": 28, "T2": 22, "T3": 21, "T4": 12, "T5": 28, "T6": 13, "T7": 20, "T8": 18}, "total": 162}, {"code": "2030", "name": "2030 - Đề nghị thanh toán không thường xuyên ( ≤ 10)", "cat": "Đề nghị thanh toán", "months": {"T1": 62, "T2": 30, "T3": 71, "T4": 20, "T5": 25, "T6": 54, "T7": 53, "T8": 45}, "total": 360}, {"code": "2031", "name": "2031 - Đề nghị thanh toán không thường xuyên (> 10 Triệu )", "cat": "Đề nghị thanh toán", "months": {"T1": 45, "T2": 30, "T3": 27, "T4": 7, "T5": 22, "T6": 31, "T7": 26, "T8": 37}, "total": 225}, {"code": "2040", "name": "2040 - Đề nghị thanh toán Quỹ nhà hàng", "cat": "Đề nghị thanh toán", "months": {"T1": 18, "T2": 19, "T3": 13, "T4": 18, "T5": 15, "T6": 18, "T7": 28, "T8": 19}, "total": 148}, {"code": "2060", "name": "2060 - Đề Nghị Thanh Toán Thưởng Hằng Tháng/Quý", "cat": "Đề nghị thanh toán", "months": {"T1": 6, "T2": 2, "T3": 3, "T4": 2, "T5": 6, "T6": 4, "T7": 4, "T8": 3}, "total": 30}, {"code": "2090", "name": "2090 - Đề nghị thưởng nóng", "cat": "Đề nghị thanh toán", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 0, "T5": 1, "T6": 1, "T7": 0, "T8": 2}, "total": 5}, {"code": "2110", "name": "2110 - Đề nghị thanh toán khách trả thừa/ tip/tiền cọc ( ≤ 1 Triệu )", "cat": "Đề nghị thanh toán", "months": {"T1": 8, "T2": 9, "T3": 7, "T4": 7, "T5": 8, "T6": 8, "T7": 6, "T8": 6}, "total": 59}, {"code": "2111", "name": "2111 - Đề nghị thanh toán khách trả thừa/ tip/tiền cọc (> 1 Triệu  )", "cat": "Đề nghị thanh toán", "months": {"T1": 15, "T2": 3, "T3": 13, "T4": 9, "T5": 5, "T6": 7, "T7": 9, "T8": 7}, "total": 68}, {"code": "3000", "name": "3000 - Đề nghị tạm ứng", "cat": "Đề nghị tạm ứng", "months": {"T1": 10, "T2": 5, "T3": 5, "T4": 3, "T5": 9, "T6": 15, "T7": 19, "T8": 19}, "total": 85}, {"code": "3010", "name": "3010 - Đề nghị tạm ứng tiền xăng xe", "cat": "Đề nghị tạm ứng", "months": {"T1": 5, "T2": 3, "T3": 5, "T4": 4, "T5": 5, "T6": 6, "T7": 3, "T8": 3}, "total": 34}, {"code": "3020", "name": "3020 - Đề nghị tạm ứng (<3 Triệu) cho nhà hàng", "cat": "Đề nghị tạm ứng", "months": {"T1": 1, "T2": 3, "T3": 0, "T4": 2, "T5": 2, "T6": 0, "T7": 0, "T8": 0}, "total": 8}, {"code": "4000", "name": "4000 - Quyết toán tạm ứng", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 9, "T2": 6, "T3": 4, "T4": 2, "T5": 4, "T6": 7, "T7": 12, "T8": 10}, "total": 54}, {"code": "4010", "name": "4010 - Quyết toán tạm ứng (<3 Triệu) cho nhà hàng", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"code": "4020", "name": "4020 - Hoàn ứng công tác phí", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 1, "T7": 1, "T8": 5}, "total": 7}, {"code": "4020", "name": "4020 - Quyết toán tạm ứng công tác phí", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 1, "T7": 1, "T8": 0}, "total": 2}, {"code": "4030", "name": "4030 - Thanh toán công tác phí", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 8, "T8": 5}, "total": 13}];
+const CATEGORIES2 = ['Memo Marketing','Đề xuất chi phí/vận hành','Đề nghị thanh toán','Đề nghị tạm ứng','Quyết toán/hoàn ứng'];
+const CAT_COLORS = {
+  'Memo Marketing': '#F59E0B',
+  'Đề xuất chi phí/vận hành': '#0891B2',
+  'Đề nghị thanh toán': '#8B5CF6',
+  'Đề nghị tạm ứng': '#10B981',
+  'Quyết toán/hoàn ứng': '#EC4899'
+};
+
+let state2 = { month:'all', cat:'all', search:'' };
+let charts2 = {};
+let donut2Instance = null;
+
+function valueFor2(p){ return state2.month==='all' ? p.total : p.months[state2.month]; }
+function shortName(name){ return name.length > 46 ? name.slice(0,46)+'…' : name; }
+
+// ============ SHARED: Danh mục quy trình theo nhóm (accordion, dùng cho Trang 3 & 4) ============
+function toggleAccordion(bodyId, headerEl){
+  const body = document.getElementById(bodyId);
+  const isOpen = body.classList.toggle('open');
+  headerEl.classList.toggle('open', isOpen);
+}
+
+function renderCategoryAccordion(containerId){
+  const catTotals = {};
+  CATEGORIES2.forEach(c=>catTotals[c]=0);
+  PROCESSES2.forEach(p=>catTotals[p.cat]+=p.total);
+  const catOrder = [...CATEGORIES2].sort((a,b)=>catTotals[b]-catTotals[a]);
+
+  let html = '';
+  catOrder.forEach((cat, idx) => {
+    const procs = [...PROCESSES2].filter(p=>p.cat===cat).sort((a,b)=>b.total-a.total);
+    const pct = (catTotals[cat]/GRAND_TOTAL*100).toFixed(1);
+    const bodyId = `${containerId}-body-${idx}`;
+    html += `
+      <div class="mb-2 rounded-lg border" style="border-color:var(--color-border);">
+        <div class="accordion-header" style="background:${CAT_COLORS[cat]}15;" onclick="toggleAccordion('${bodyId}', this)">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span style="display:inline-block; width:10px; height:10px; border-radius:3px; background:${CAT_COLORS[cat]}; flex-shrink:0;"></span>
+            <b style="font-size:13.5px;">${cat}</b>
+            <span class="text-xs" style="color:var(--color-text-muted)">&middot; ${procs.length} quy trình &middot; ${fmtInt(catTotals[cat])} yêu cầu (${pct}%)</span>
+          </div>
+          <span class="accordion-chevron" style="color:var(--color-text-light)">▸</span>
+        </div>
+        <div id="${bodyId}" class="accordion-body">
+          <table class="w-full text-sm" style="border-collapse:collapse;">
+            <tbody>
+              ${procs.map(p=>`
+                <tr style="border-top:1px solid #F1F5F9;">
+                  <td class="py-1.5 px-3" style="font-size:12px; color:var(--color-text-light); white-space:nowrap; width:60px;">${p.code}</td>
+                  <td class="py-1.5 px-3" style="font-size:12.5px;">${p.name}</td>
+                  <td class="py-1.5 px-3 text-right" style="font-size:12.5px; font-weight:600; width:100px;">${fmtInt(p.total)}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  });
+  document.getElementById(containerId).innerHTML = html;
+}
+
+function getFiltered2(){
+  const s = state2.search.toLowerCase();
+  return PROCESSES2.filter(p =>
+    (state2.cat==='all' || p.cat===state2.cat) &&
+    (s==='' || p.name.toLowerCase().includes(s) || p.code.includes(s))
+  );
+}
+
+function initPage2(){
+  // populate filters
+  const monthSel2 = document.getElementById('filterMonth2');
+  MONTHS.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; monthSel2.appendChild(o); });
+  const catSel2 = document.getElementById('filterCat2');
+  CATEGORIES2.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; catSel2.appendChild(o); });
+
+  monthSel2.addEventListener('change', e=>{ state2.month=e.target.value; renderAll2(); });
+  catSel2.addEventListener('change', e=>{ state2.cat=e.target.value; renderAll2(); });
+  document.getElementById('searchBox2').addEventListener('input', e=>{ state2.search=e.target.value; renderAll2(); });
+  document.getElementById('resetBtn2').addEventListener('click', resetFilters2);
+
+  renderAll2();
+  renderCategoryReference2();
+}
+
+function renderKPI2(catFiltered){
+  const total = catFiltered.reduce((s,p)=>s+valueFor2(p),0);
+  document.getElementById('kpiTotal2').textContent = fmtInt(total);
+
+  const topP = [...catFiltered].sort((a,b)=>valueFor2(b)-valueFor2(a))[0];
+  if (topP){
+    document.getElementById('kpiTopProcess2').textContent = topP.name;
+    document.getElementById('kpiTopProcess2Sub').textContent = `${fmtInt(valueFor2(topP))} yêu cầu (${(valueFor2(topP)/total*100).toFixed(1)}%)`;
+  } else {
+    document.getElementById('kpiTopProcess2').textContent = '-';
+    document.getElementById('kpiTopProcess2Sub').textContent = '';
+  }
+
+  const catTotals = {};
+  catFiltered.forEach(p=>{ catTotals[p.cat]=(catTotals[p.cat]||0)+valueFor2(p); });
+  const topCat = Object.entries(catTotals).sort((a,b)=>b[1]-a[1])[0];
+  if (topCat){
+    document.getElementById('kpiTopCat2').textContent = topCat[0];
+    document.getElementById('kpiTopCat2Sub').textContent = `${fmtInt(topCat[1])} yêu cầu (${(topCat[1]/total*100).toFixed(1)}%)`;
+  } else {
+    document.getElementById('kpiTopCat2').textContent = '-';
+    document.getElementById('kpiTopCat2Sub').textContent = '';
+  }
+}
+
+function renderLineChart2(catFiltered){
+  const byMonth = {};
+  MONTHS.forEach(m=>byMonth[m]=0);
+  catFiltered.forEach(p=>MONTHS.forEach(m=>byMonth[m]+=p.months[m]));
+  const ctx = document.getElementById('lineChart2');
+  if (charts2.line) charts2.line.destroy();
+  charts2.line = new Chart(ctx, {
+    type:'line',
+    plugins:[ChartDataLabels],
+    data:{ labels: MONTHS, datasets:[{
+      label:'Số quy trình phát sinh', data: MONTHS.map(m=>byMonth[m]),
+      borderColor:'#0891B2', backgroundColor:'rgba(8,145,178,0.12)', fill:true, tension:0.35,
+      pointRadius:5, pointBackgroundColor:'#0891B2', pointHoverRadius:7, borderWidth:3
+    }]},
+    options:{
+      responsive:true, layout:{padding:{top:22}},
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${fmtInt(c.parsed.y)} yêu cầu`}},
+        datalabels:{ align:'top', anchor:'end', offset:6, color:'#0F172A', font:{weight:700,size:12}, formatter:v=>fmtInt(v) } },
+      scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>fmtInt(v) } } },
+      onClick:(evt,els)=>{
+        if(els.length){
+          const m = MONTHS[els[0].index];
+          state2.month = (state2.month===m) ? 'all' : m;
+          document.getElementById('filterMonth2').value = state2.month;
+          renderAll2();
+        }
+      }
+    }
+  });
+}
+
+function renderDonutChart2(){
+  // luôn dựa trên toàn bộ 61 quy trình, chỉ áp dụng filter tháng
+  const catTotals = {};
+  CATEGORIES2.forEach(c=>catTotals[c]=0);
+  PROCESSES2.forEach(p=>catTotals[p.cat]+=valueFor2(p));
+  const sorted = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]);
+  const total = sorted.reduce((s,[,v])=>s+v,0);
+
+  const el = document.getElementById('donutChart2');
+  if (!donut2Instance) donut2Instance = echarts.init(el);
+  const data = sorted.map(([name,value])=>({ name, value, itemStyle:{ color: CAT_COLORS[name] } }));
+
+  donut2Instance.setOption({
+    tooltip:{ trigger:'item', formatter:p=>`${p.name}<br/><b>${fmtInt(p.value)}</b> yêu cầu (${p.percent}%)` },
+    series:[{
+      type:'pie', radius:['38%','65%'], center:['50%','50%'], avoidLabelOverlap:true,
+      label:{ show:true, formatter:p=>`${p.percent}% - ${p.name}`, fontSize:12, lineHeight:16 },
+      labelLine:{ show:true, length:14, length2:10 },
+      data
+    }]
+  });
+  window.addEventListener('resize', ()=>donut2Instance.resize());
+}
+
+function renderRankChart2(catFiltered){
+  const sorted = [...catFiltered].sort((a,b)=>valueFor2(b)-valueFor2(a)).slice(0,15);
+  const ctx = document.getElementById('rankChart2');
+  if (charts2.rank) charts2.rank.destroy();
+  charts2.rank = new Chart(ctx, {
+    type:'bar',
+    plugins:[ChartDataLabels],
+    data:{
+      labels: sorted.map(p=>p.name),
+      datasets:[{ data: sorted.map(p=>valueFor2(p)), backgroundColor: sorted.map(p=>CAT_COLORS[p.cat]), borderRadius:4 }]
+    },
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false, layout:{padding:{right:36}},
+      plugins:{ legend:{display:false},
+        tooltip:{ callbacks:{ label:c=>` ${sorted[c.dataIndex].name}: ${fmtInt(c.parsed.x)} yêu cầu` } },
+        datalabels:{ anchor:'end', align:'right', offset:4, color:'#0F172A', font:{weight:700,size:11}, formatter:v=>fmtInt(v) } },
+      scales:{ x:{ beginAtZero:true, ticks:{ callback:v=>fmtInt(v) } }, y:{ ticks:{ font:{size:11.5} } } },
+      onClick:(evt,els)=>{
+        if(els.length){
+          const p = sorted[els[0].index];
+          state2.search = (state2.search===p.code) ? '' : p.code;
+          document.getElementById('searchBox2').value = state2.search;
+          renderAll2();
+        }
+      }
+    }
+  });
+}
+
+let gridInstance2 = null;
+function renderTable2(catFiltered){
+  const columns = ['Mã','Quy trình','Nhóm', ...MONTHS, 'Tổng cộng'];
+  const data = catFiltered.sort((a,b)=>b.total-a.total).map(p => [p.code, p.name, p.cat, ...MONTHS.map(m=>p.months[m]), p.total]);
+  const container = document.getElementById('dataTable2');
+  container.innerHTML = '';
+  if (data.length === 0){
+    container.innerHTML = '<div class="text-center py-8 text-sm" style="color:var(--color-text-muted)">Không có dữ liệu phù hợp với bộ lọc này.</div>';
+    return;
+  }
+  gridInstance2 = new gridjs.Grid({
+    columns, data, sort:true, pagination:{limit:15},
+    className:{ table:'text-sm' },
+    style:{ th:{ 'font-size':'12px' }, td:{ 'font-size':'12.5px' } }
+  }).render(container);
+}
+
+function renderAll2(){
+  const catFiltered = getFiltered2();
+  document.getElementById('emptyState2').classList.toggle('hidden', catFiltered.length > 0);
+  renderKPI2(catFiltered);
+  renderLineChart2(catFiltered);
+  renderDonutChart2();
+  renderRankChart2(catFiltered);
+  renderTable2(catFiltered);
+}
+
+function resetFilters2(){
+  state2 = { month:'all', cat:'all', search:'' };
+  document.getElementById('filterMonth2').value='all';
+  document.getElementById('filterCat2').value='all';
+  document.getElementById('searchBox2').value='';
+  renderAll2();
+}
+
+function renderCategoryReference2(){
+  const catTotals = {};
+  CATEGORIES2.forEach(c=>catTotals[c]=0);
+  PROCESSES2.forEach(p=>catTotals[p.cat]+=p.total);
+  const catOrder = [...CATEGORIES2].sort((a,b)=>catTotals[b]-catTotals[a]);
+
+  let html = `<table class="w-full text-sm" style="border-collapse:collapse;">
+    <thead><tr style="border-bottom:2px solid var(--color-border);">
+      <th class="text-left py-2 px-2" style="font-size:11px; color:var(--color-text-light)">Mã</th>
+      <th class="text-left py-2 px-2" style="font-size:11px; color:var(--color-text-light)">Tên quy trình</th>
+      <th class="text-right py-2 px-2" style="font-size:11px; color:var(--color-text-light)">Tổng cộng</th>
+    </tr></thead><tbody>`;
+
+  catOrder.forEach(cat=>{
+    const procs = PROCESSES2.filter(p=>p.cat===cat).sort((a,b)=>b.total-a.total);
+    const pct = (catTotals[cat]/GRAND_TOTAL*100).toFixed(1);
+    html += `<tr>
+      <td colspan="3" class="py-2 px-2" style="background:${CAT_COLORS[cat]}18; border-top:1px solid var(--color-border); border-bottom:1px solid var(--color-border);">
+        <span style="display:inline-block; width:10px; height:10px; border-radius:3px; background:${CAT_COLORS[cat]}; margin-right:6px;"></span>
+        <b>${cat}</b> &middot; ${procs.length} quy trình &middot; ${fmtInt(catTotals[cat])} yêu cầu (${pct}%)
+      </td>
+    </tr>`;
+    procs.forEach(p=>{
+      html += `<tr style="border-bottom:1px solid #F1F5F9;">
+        <td class="py-1.5 px-2" style="font-size:12.5px; color:var(--color-text-light); white-space:nowrap;">${p.code}</td>
+        <td class="py-1.5 px-2" style="font-size:12.5px;">${p.name}</td>
+        <td class="py-1.5 px-2 text-right" style="font-size:12.5px; font-weight:600;">${fmtInt(p.total)}</td>
+      </tr>`;
+    });
+  });
+
+  html += `</tbody></table>`;
+  document.getElementById('categoryRefTable2').innerHTML = html;
+}
+
+// ======================================================================================
+// ==================================== PAGE 3 DATA =====================================
+// ======================================================================================
+const RECORDS3 = [{"dept": "Bếp Tổng", "code": "1000", "name": "1000 - Phiếu đặt nguyên liệu phòng gia vị", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 1, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Bếp Tổng", "code": "1021", "name": "1021 - Đề xuất thiết bị CNTT  (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 2, "T8": 0}, "total": 3}, {"dept": "Bếp Tổng", "code": "1031", "name": "1031 - Đề xuất mua sắm,chi phí (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 8, "T2": 12, "T3": 5, "T4": 2, "T5": 4, "T6": 4, "T7": 4, "T8": 6}, "total": 45}, {"dept": "Bếp Tổng", "code": "1032", "name": "1032 - Đề xuất mua sắm, chi phí ( &gt; 10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 6, "T2": 1, "T3": 3, "T4": 1, "T5": 1, "T6": 0, "T7": 1, "T8": 3}, "total": 16}, {"dept": "Bếp Tổng", "code": "1041", "name": "1041 - Đề xuất sửa chữa (3Triệu ≤ 10 Triệu) khối Vp dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 4, "T2": 0, "T3": 1, "T4": 2, "T5": 2, "T6": 2, "T7": 4, "T8": 2}, "total": 17}, {"dept": "Bếp Tổng", "code": "1042", "name": "1042 - Đề xuất sửa chữa ( &gt;10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 2, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Bếp Tổng", "code": "1060", "name": "1060 - Đề xuất tạo mới/ đổi NCC", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 1, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Bếp Tổng", "code": "1080", "name": "1080 - Đề xuất Tính OT (làm thêm giờ)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 3, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 4}, {"dept": "Bếp Tổng", "code": "1090", "name": "1090 - Đề xuất Đi công tác", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 2, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Bếp Tổng", "code": "1130", "name": "1130 - Đề xuất thanh lý tài sản", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Bếp Tổng", "code": "1160", "name": "1160 - Đề Xuất Tuyển Dụng (Văn Phòng+Bếp Tổng)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 1, "T4": 1, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Bếp Tổng", "code": "2020", "name": "2020 - Đề nghị thanh toán (thường xuyên)", "cat": "Đề nghị thanh toán", "months": {"T1": 2, "T2": 0, "T3": 1, "T4": 2, "T5": 3, "T6": 2, "T7": 2, "T8": 1}, "total": 13}, {"dept": "Bếp Tổng", "code": "2030", "name": "2030 - Đề nghị thanh toán không thường xuyên ( ≤ 10)", "cat": "Đề nghị thanh toán", "months": {"T1": 3, "T2": 1, "T3": 1, "T4": 0, "T5": 2, "T6": 1, "T7": 2, "T8": 1}, "total": 11}, {"dept": "Bếp Tổng", "code": "2031", "name": "2031 - Đề nghị thanh toán không thường xuyên ( &gt;10 Triệu )", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 1}, "total": 1}, {"dept": "Bếp Tổng", "code": "2040", "name": "2040 - Đề nghị thanh toán Quỹ nhà hàng", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 1, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Bếp Tổng", "code": "3000", "name": "3000 - Đề nghị tạm ứng", "cat": "Đề nghị tạm ứng", "months": {"T1": 2, "T2": 0, "T3": 0, "T4": 0, "T5": 1, "T6": 1, "T7": 0, "T8": 0}, "total": 4}, {"dept": "Bếp Tổng", "code": "3010", "name": "3010 - Đề nghị tạm ứng tiền xăng xe", "cat": "Đề nghị tạm ứng", "months": {"T1": 3, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 4}, {"dept": "Bếp Tổng", "code": "4000", "name": "4000 - Quyết toán tạm ứng", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 2, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Khối Văn phòng - HO", "code": "2030", "name": "2030 - Đề nghị thanh toán không thường xuyên ( ≤ 10)", "cat": "Đề nghị thanh toán", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Khối Văn phòng - HO", "code": "2031", "name": "2031 - Đề nghị thanh toán không thường xuyên ( &gt;10 Triệu )", "cat": "Đề nghị thanh toán", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 1, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Khối Văn phòng - HO", "code": "3010", "name": "3010 - Đề nghị tạm ứng tiền xăng xe", "cat": "Đề nghị tạm ứng", "months": {"T1": 2, "T2": 2, "T3": 5, "T4": 3, "T5": 4, "T6": 5, "T7": 3, "T8": 3}, "total": 27}, {"dept": "New Brand", "code": "1030", "name": "1030 - Đề xuất mua sắm, chi phí (&lt;3 Triệu)  Chỉ áp dụng cho Nhà Hàng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 1, "T7": 0, "T8": 0}, "total": 1}, {"dept": "New Brand", "code": "2030", "name": "2030 - Đề nghị thanh toán không thường xuyên ( ≤ 10)", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 1, "T7": 0, "T8": 0}, "total": 1}, {"dept": "New Brand", "code": "3000", "name": "3000 - Đề nghị tạm ứng", "cat": "Đề nghị tạm ứng", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 2, "T8": 4}, "total": 6}, {"dept": "New Brand", "code": "4020", "name": "4020 - Quyết toán tạm ứng công tác phí", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 1}, "total": 1}, {"dept": "Phòng Cung ứng", "code": "1031", "name": "1031 - Đề xuất mua sắm,chi phí (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 1, "T3": 1, "T4": 0, "T5": 0, "T6": 1, "T7": 0, "T8": 0}, "total": 3}, {"dept": "Phòng Cung ứng", "code": "1032", "name": "1032 - Đề xuất mua sắm, chi phí ( &gt; 10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Phòng Cung ứng", "code": "1070", "name": "1070 - Duyệt giá mua hàng tháng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 1, "T3": 1, "T4": 0, "T5": 1, "T6": 1, "T7": 1, "T8": 1}, "total": 7}, {"dept": "Phòng Cung ứng", "code": "1160", "name": "1160 - Đề Xuất Tuyển Dụng (Văn Phòng+Bếp Tổng)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 1, "T3": 1, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Phòng Cung ứng", "code": "1300", "name": "1300 - Duyệt so sánh giá", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 2, "T2": 3, "T3": 1, "T4": 0, "T5": 1, "T6": 2, "T7": 1, "T8": 0}, "total": 10}, {"dept": "Phòng Cung ứng", "code": "2020", "name": "2020 - Đề nghị thanh toán (thường xuyên)", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 1, "T4": 0, "T5": 2, "T6": 0, "T7": 0, "T8": 0}, "total": 3}, {"dept": "Phòng Cung ứng", "code": "2030", "name": "2030 - Đề nghị thanh toán không thường xuyên ( ≤ 10)", "cat": "Đề nghị thanh toán", "months": {"T1": 38, "T2": 22, "T3": 34, "T4": 7, "T5": 5, "T6": 26, "T7": 31, "T8": 23}, "total": 186}, {"dept": "Phòng Cung ứng", "code": "2031", "name": "2031 - Đề nghị thanh toán không thường xuyên ( &gt;10 Triệu )", "cat": "Đề nghị thanh toán", "months": {"T1": 32, "T2": 26, "T3": 19, "T4": 3, "T5": 13, "T6": 15, "T7": 16, "T8": 21}, "total": 145}, {"dept": "Phòng Đào Tạo", "code": "1021", "name": "1021 - Đề xuất thiết bị CNTT  (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 2, "T8": 0}, "total": 2}, {"dept": "Phòng Đào Tạo", "code": "1031", "name": "1031 - Đề xuất mua sắm,chi phí (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 1, "T4": 1, "T5": 0, "T6": 2, "T7": 1, "T8": 0}, "total": 5}, {"dept": "Phòng Đào Tạo", "code": "1032", "name": "1032 - Đề xuất mua sắm, chi phí ( &gt; 10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 2}, "total": 4}, {"dept": "Phòng Đào Tạo", "code": "1041", "name": "1041 - Đề xuất sửa chữa (3Triệu ≤ 10 Triệu) khối Vp dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 2, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Phòng Đào Tạo", "code": "1160", "name": "1160 - Đề Xuất Tuyển Dụng (Văn Phòng+Bếp Tổng)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 1, "T5": 0, "T6": 1, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Phòng Đào Tạo", "code": "1210", "name": "1210 - Đề xuất Chi phí MKT", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Đào Tạo", "code": "2020", "name": "2020 - Đề nghị thanh toán (thường xuyên)", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 1, "T3": 0, "T4": 0, "T5": 1, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Phòng Đào Tạo", "code": "2030", "name": "2030 - Đề nghị thanh toán không thường xuyên ( ≤ 10)", "cat": "Đề nghị thanh toán", "months": {"T1": 1, "T2": 0, "T3": 1, "T4": 2, "T5": 1, "T6": 3, "T7": 3, "T8": 2}, "total": 13}, {"dept": "Phòng Đào Tạo", "code": "2031", "name": "2031 - Đề nghị thanh toán không thường xuyên ( &gt;10 Triệu )", "cat": "Đề nghị thanh toán", "months": {"T1": 4, "T2": 0, "T3": 0, "T4": 1, "T5": 0, "T6": 2, "T7": 0, "T8": 0}, "total": 7}, {"dept": "Phòng Đào Tạo", "code": "2090", "name": "2090 - Đề nghị thưởng nóng", "cat": "Đề nghị thanh toán", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Đào Tạo", "code": "3000", "name": "3000 - Đề nghị tạm ứng", "cat": "Đề nghị tạm ứng", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Đào Tạo", "code": "4000", "name": "4000 - Quyết toán tạm ứng", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 0, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 1, "T8": 0}, "total": 2}, {"dept": "Phòng Dự án & Bảo trì", "code": "1031", "name": "1031 - Đề xuất mua sắm,chi phí (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 1, "T7": 1, "T8": 0}, "total": 3}, {"dept": "Phòng Dự án & Bảo trì", "code": "1042", "name": "1042 - Đề xuất sửa chữa ( &gt;10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 1, "T6": 1, "T7": 1, "T8": 0}, "total": 3}, {"dept": "Phòng Dự án & Bảo trì", "code": "1090", "name": "1090 - Đề xuất Đi công tác", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 1, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Dự án & Bảo trì", "code": "1160", "name": "1160 - Đề Xuất Tuyển Dụng (Văn Phòng+Bếp Tổng)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 1, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Dự án & Bảo trì", "code": "2020", "name": "2020 - Đề nghị thanh toán (thường xuyên)", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 1, "T8": 6}, "total": 7}, {"dept": "Phòng Dự án & Bảo trì", "code": "2030", "name": "2030 - Đề nghị thanh toán không thường xuyên ( ≤ 10)", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 1, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Dự án & Bảo trì", "code": "2090", "name": "2090 - Đề nghị thưởng nóng", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 1, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Dự án & Bảo trì", "code": "3000", "name": "3000 - Đề nghị tạm ứng", "cat": "Đề nghị tạm ứng", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 2, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Phòng Dự án & Bảo trì", "code": "4000", "name": "4000 - Quyết toán tạm ứng", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 1, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Franchise", "code": "0050", "name": "0050 - Memo chương trình Marketing  (Franchise) - FM", "cat": "Memo Marketing", "months": {"T1": 8, "T2": 1, "T3": 1, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 10}, {"dept": "Phòng Franchise", "code": "1031", "name": "1031 - Đề xuất mua sắm,chi phí (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 4, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 4}, {"dept": "Phòng Franchise", "code": "1032", "name": "1032 - Đề xuất mua sắm, chi phí ( &gt; 10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 2, "T4": 1, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 3}, {"dept": "Phòng Franchise", "code": "1042", "name": "1042 - Đề xuất sửa chữa ( &gt;10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 1, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Franchise", "code": "1090", "name": "1090 - Đề xuất Đi công tác", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 2, "T2": 1, "T3": 1, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 4}, {"dept": "Phòng Franchise", "code": "1111", "name": "1111 - Đề Xuất Điều Chỉnh Staffing/ Định Biên Phòng Ban", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 2, "T8": 0}, "total": 2}, {"dept": "Phòng Franchise", "code": "1210", "name": "1210 - Đề xuất Chi phí MKT", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Franchise", "code": "1230", "name": "1230 - Quy trình Phát triển đặc biệt - Special Development Process", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 1, "T5": 0, "T6": 0, "T7": 1, "T8": 1}, "total": 3}, {"dept": "Phòng Franchise", "code": "2030", "name": "2030 - Đề nghị thanh toán không thường xuyên ( ≤ 10)", "cat": "Đề nghị thanh toán", "months": {"T1": 2, "T2": 0, "T3": 0, "T4": 1, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 3}, {"dept": "Phòng Franchise", "code": "2031", "name": "2031 - Đề nghị thanh toán không thường xuyên ( &gt;10 Triệu )", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 1, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Franchise", "code": "2040", "name": "2040 - Đề nghị thanh toán Quỹ nhà hàng", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 1}, "total": 1}, {"dept": "Phòng Franchise", "code": "2111", "name": "2111 - Đề nghị thanh toán khách trả thừa/ tip/tiền cọc ( &gt; 1 Triệu  )", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 1, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Franchise", "code": "3000", "name": "3000 - Đề nghị tạm ứng", "cat": "Đề nghị tạm ứng", "months": {"T1": 4, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 4}, {"dept": "Phòng Franchise", "code": "4000", "name": "4000 - Quyết toán tạm ứng", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 2, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 3}, {"dept": "Phòng Hành chính Nhân sự", "code": "1010", "name": "1010 - Đề xuất tiếp khách, thử món", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 2, "T3": 1, "T4": 1, "T5": 2, "T6": 1, "T7": 0, "T8": 2}, "total": 9}, {"dept": "Phòng Hành chính Nhân sự", "code": "1021", "name": "1021 - Đề xuất thiết bị CNTT  (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 1, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Hành chính Nhân sự", "code": "1022", "name": "1022 - Đề xuất thiết bị CNTT ( &gt;10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 1, "T4": 0, "T5": 2, "T6": 1, "T7": 0, "T8": 0}, "total": 4}, {"dept": "Phòng Hành chính Nhân sự", "code": "1031", "name": "1031 - Đề xuất mua sắm,chi phí (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 6, "T2": 2, "T3": 3, "T4": 8, "T5": 9, "T6": 0, "T7": 5, "T8": 5}, "total": 38}, {"dept": "Phòng Hành chính Nhân sự", "code": "1032", "name": "1032 - Đề xuất mua sắm, chi phí ( &gt; 10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 4, "T2": 0, "T3": 2, "T4": 2, "T5": 3, "T6": 1, "T7": 1, "T8": 5}, "total": 18}, {"dept": "Phòng Hành chính Nhân sự", "code": "1041", "name": "1041 - Đề xuất sửa chữa (3Triệu ≤ 10 Triệu) khối Vp dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 1, "T5": 1, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Phòng Hành chính Nhân sự", "code": "1090", "name": "1090 - Đề xuất Đi công tác", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 1, "T3": 0, "T4": 0, "T5": 2, "T6": 0, "T7": 0, "T8": 0}, "total": 3}, {"dept": "Phòng Hành chính Nhân sự", "code": "1120", "name": "1120 - Đề xuất Đồng phục (tổng hợp)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 1, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Hành chính Nhân sự", "code": "1160", "name": "1160 - Đề Xuất Tuyển Dụng (Văn Phòng+Bếp Tổng)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 1, "T8": 1}, "total": 2}, {"dept": "Phòng Hành chính Nhân sự", "code": "1180", "name": "1180 - Đề Xuất Tuyển Dụng Nhà Hàng (Cấp Quản Lý)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Hành chính Nhân sự", "code": "2020", "name": "2020 - Đề nghị thanh toán (thường xuyên)", "cat": "Đề nghị thanh toán", "months": {"T1": 12, "T2": 11, "T3": 8, "T4": 4, "T5": 8, "T6": 1, "T7": 3, "T8": 3}, "total": 50}, {"dept": "Phòng Hành chính Nhân sự", "code": "2030", "name": "2030 - Đề nghị thanh toán không thường xuyên ( ≤ 10)", "cat": "Đề nghị thanh toán", "months": {"T1": 8, "T2": 4, "T3": 7, "T4": 7, "T5": 13, "T6": 12, "T7": 7, "T8": 8}, "total": 66}, {"dept": "Phòng Hành chính Nhân sự", "code": "2031", "name": "2031 - Đề nghị thanh toán không thường xuyên ( &gt;10 Triệu )", "cat": "Đề nghị thanh toán", "months": {"T1": 4, "T2": 1, "T3": 7, "T4": 2, "T5": 8, "T6": 8, "T7": 8, "T8": 11}, "total": 49}, {"dept": "Phòng Hành chính Nhân sự", "code": "2060", "name": "2060 - Đề Nghị Thanh Toán Thưởng Hằng Tháng/Quý", "cat": "Đề nghị thanh toán", "months": {"T1": 6, "T2": 2, "T3": 3, "T4": 2, "T5": 6, "T6": 4, "T7": 4, "T8": 3}, "total": 30}, {"dept": "Phòng Hành chính Nhân sự", "code": "2090", "name": "2090 - Đề nghị thưởng nóng", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 2}, "total": 2}, {"dept": "Phòng Hành chính Nhân sự", "code": "3000", "name": "3000 - Đề nghị tạm ứng", "cat": "Đề nghị tạm ứng", "months": {"T1": 1, "T2": 2, "T3": 0, "T4": 2, "T5": 1, "T6": 3, "T7": 6, "T8": 5}, "total": 20}, {"dept": "Phòng Hành chính Nhân sự", "code": "4000", "name": "4000 - Quyết toán tạm ứng", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 0, "T2": 1, "T3": 1, "T4": 1, "T5": 1, "T6": 2, "T7": 4, "T8": 2}, "total": 12}, {"dept": "Phòng Kế Toán", "code": "1010", "name": "1010 - Đề xuất tiếp khách, thử món", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 1}, "total": 2}, {"dept": "Phòng Kế Toán", "code": "1021", "name": "1021 - Đề xuất thiết bị CNTT  (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 2, "T2": 0, "T3": 2, "T4": 1, "T5": 1, "T6": 0, "T7": 0, "T8": 0}, "total": 6}, {"dept": "Phòng Kế Toán", "code": "1022", "name": "1022 - Đề xuất thiết bị CNTT ( &gt;10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 2, "T3": 0, "T4": 0, "T5": 1, "T6": 0, "T7": 1, "T8": 0}, "total": 4}, {"dept": "Phòng Kế Toán", "code": "1031", "name": "1031 - Đề xuất mua sắm,chi phí (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 1, "T7": 0, "T8": 2}, "total": 3}, {"dept": "Phòng Kế Toán", "code": "1032", "name": "1032 - Đề xuất mua sắm, chi phí ( &gt; 10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 3}, "total": 3}, {"dept": "Phòng Kế Toán", "code": "1041", "name": "1041 - Đề xuất sửa chữa (3Triệu ≤ 10 Triệu) khối Vp dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 2, "T8": 0}, "total": 2}, {"dept": "Phòng Kế Toán", "code": "1090", "name": "1090 - Đề xuất Đi công tác", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 1, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Kế Toán", "code": "1160", "name": "1160 - Đề Xuất Tuyển Dụng (Văn Phòng+Bếp Tổng)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 2, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 1}, "total": 4}, {"dept": "Phòng Kế Toán", "code": "1210", "name": "1210 - Đề xuất Chi phí MKT", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 1}, "total": 1}, {"dept": "Phòng Kế Toán", "code": "2020", "name": "2020 - Đề nghị thanh toán (thường xuyên)", "cat": "Đề nghị thanh toán", "months": {"T1": 3, "T2": 2, "T3": 1, "T4": 0, "T5": 1, "T6": 0, "T7": 1, "T8": 0}, "total": 8}, {"dept": "Phòng Kế Toán", "code": "2030", "name": "2030 - Đề nghị thanh toán không thường xuyên ( ≤ 10)", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 3, "T4": 1, "T5": 0, "T6": 0, "T7": 1, "T8": 1}, "total": 6}, {"dept": "Phòng Kế Toán", "code": "2031", "name": "2031 - Đề nghị thanh toán không thường xuyên ( &gt;10 Triệu )", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 2, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 2}, "total": 4}, {"dept": "Phòng Kế Toán", "code": "3000", "name": "3000 - Đề nghị tạm ứng", "cat": "Đề nghị tạm ứng", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 1, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Kế Toán", "code": "4000", "name": "4000 - Quyết toán tạm ứng", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 2, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Phòng Kế Toán", "code": "4020", "name": "4020 - Hoàn ứng công tác phí", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 1, "T8": 0}, "total": 1}, {"dept": "Phòng Kế Toán", "code": "4020", "name": "4020 - Quyết toán tạm ứng công tác phí", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 1}, "total": 1}, {"dept": "Phòng Kế Toán", "code": "4030", "name": "4030 - Thanh toán công tác phí", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 2, "T8": 1}, "total": 3}, {"dept": "Phòng Marketing", "code": "0010", "name": "0010 - Memo chương trình Marketing  (Fast Casual + MCD)", "cat": "Memo Marketing", "months": {"T1": 3, "T2": 1, "T3": 2, "T4": 0, "T5": 7, "T6": 4, "T7": 3, "T8": 9}, "total": 29}, {"dept": "Phòng Marketing", "code": "0011", "name": "0011 - Memo chương trình Marketing  (Fast Casual +KRU)", "cat": "Memo Marketing", "months": {"T1": 15, "T2": 6, "T3": 12, "T4": 4, "T5": 4, "T6": 4, "T7": 6, "T8": 10}, "total": 61}, {"dept": "Phòng Marketing", "code": "0020", "name": "0020 - Memo chương trình Marketing ( Casual)", "cat": "Memo Marketing", "months": {"T1": 1, "T2": 0, "T3": 2, "T4": 0, "T5": 4, "T6": 2, "T7": 1, "T8": 1}, "total": 11}, {"dept": "Phòng Marketing", "code": "0030", "name": "0030 - Memo chương trình Marketing (Casual Dinning)", "cat": "Memo Marketing", "months": {"T1": 6, "T2": 5, "T3": 6, "T4": 2, "T5": 5, "T6": 11, "T7": 6, "T8": 9}, "total": 50}, {"dept": "Phòng Marketing", "code": "0040", "name": "0040 - Memo chương trình Marketing (Fine Dinning)", "cat": "Memo Marketing", "months": {"T1": 4, "T2": 1, "T3": 3, "T4": 5, "T5": 1, "T6": 3, "T7": 3, "T8": 4}, "total": 24}, {"dept": "Phòng Marketing", "code": "1010", "name": "1010 - Đề xuất tiếp khách, thử món", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 1, "T8": 0}, "total": 1}, {"dept": "Phòng Marketing", "code": "1021", "name": "1021 - Đề xuất thiết bị CNTT  (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 1, "T4": 0, "T5": 0, "T6": 1, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Phòng Marketing", "code": "1022", "name": "1022 - Đề xuất thiết bị CNTT ( &gt;10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 1, "T6": 0, "T7": 0, "T8": 1}, "total": 2}, {"dept": "Phòng Marketing", "code": "1031", "name": "1031 - Đề xuất mua sắm,chi phí (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 2, "T3": 0, "T4": 0, "T5": 1, "T6": 1, "T7": 0, "T8": 0}, "total": 4}, {"dept": "Phòng Marketing", "code": "1032", "name": "1032 - Đề xuất mua sắm, chi phí ( &gt; 10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Marketing", "code": "1041", "name": "1041 - Đề xuất sửa chữa (3Triệu ≤ 10 Triệu) khối Vp dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 1, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Marketing", "code": "1080", "name": "1080 - Đề xuất Tính OT (làm thêm giờ)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 1, "T3": 1, "T4": 1, "T5": 2, "T6": 1, "T7": 0, "T8": 0}, "total": 6}, {"dept": "Phòng Marketing", "code": "1090", "name": "1090 - Đề xuất Đi công tác", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 2, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Phòng Marketing", "code": "1160", "name": "1160 - Đề Xuất Tuyển Dụng (Văn Phòng+Bếp Tổng)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 1, "T3": 0, "T4": 1, "T5": 0, "T6": 0, "T7": 0, "T8": 2}, "total": 4}, {"dept": "Phòng Marketing", "code": "1210", "name": "1210 - Đề xuất Chi phí MKT", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 18, "T2": 9, "T3": 11, "T4": 3, "T5": 11, "T6": 11, "T7": 13, "T8": 11}, "total": 87}, {"dept": "Phòng Marketing", "code": "1211", "name": "1211 - Đề xuất Chi phí MKT (MWK & S79)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 2, "T2": 3, "T3": 6, "T4": 1, "T5": 2, "T6": 4, "T7": 3, "T8": 7}, "total": 28}, {"dept": "Phòng Marketing", "code": "1212", "name": "1212 - Đề xuất Chi phí MKT (&lt;10Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 5, "T6": 6, "T7": 13, "T8": 29}, "total": 53}, {"dept": "Phòng Marketing", "code": "1340", "name": "1340 - Đề xuất bán Voucher", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Marketing", "code": "2010", "name": "2010 - Đề nghị thanh toán (&lt;3 Triệu) cho Nhà Hàng", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 1, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Marketing", "code": "2020", "name": "2020 - Đề nghị thanh toán (thường xuyên)", "cat": "Đề nghị thanh toán", "months": {"T1": 6, "T2": 3, "T3": 8, "T4": 4, "T5": 6, "T6": 6, "T7": 9, "T8": 4}, "total": 46}, {"dept": "Phòng Marketing", "code": "2030", "name": "2030 - Đề nghị thanh toán không thường xuyên ( ≤ 10)", "cat": "Đề nghị thanh toán", "months": {"T1": 2, "T2": 1, "T3": 4, "T4": 0, "T5": 2, "T6": 0, "T7": 0, "T8": 4}, "total": 13}, {"dept": "Phòng Marketing", "code": "2031", "name": "2031 - Đề nghị thanh toán không thường xuyên ( &gt;10 Triệu )", "cat": "Đề nghị thanh toán", "months": {"T1": 4, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 2, "T7": 0, "T8": 2}, "total": 9}, {"dept": "Phòng Marketing", "code": "3000", "name": "3000 - Đề nghị tạm ứng", "cat": "Đề nghị tạm ứng", "months": {"T1": 0, "T2": 0, "T3": 2, "T4": 0, "T5": 0, "T6": 2, "T7": 0, "T8": 2}, "total": 6}, {"dept": "Phòng Marketing", "code": "4000", "name": "4000 - Quyết toán tạm ứng", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 0, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 2}, "total": 3}, {"dept": "Phòng Marketing", "code": "4020", "name": "4020 - Quyết toán tạm ứng công tác phí", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 1}, "total": 1}, {"dept": "Phòng Marketing", "code": "4030", "name": "4030 - Thanh toán công tác phí", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 2}, "total": 2}, {"dept": "Phòng QC", "code": "1021", "name": "1021 - Đề xuất thiết bị CNTT  (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 1, "T8": 0}, "total": 1}, {"dept": "Phòng QC", "code": "1031", "name": "1031 - Đề xuất mua sắm,chi phí (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 1, "T7": 2, "T8": 0}, "total": 3}, {"dept": "Phòng QC", "code": "1090", "name": "1090 - Đề xuất Đi công tác", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 5, "T2": 0, "T3": 1, "T4": 0, "T5": 1, "T6": 0, "T7": 0, "T8": 0}, "total": 7}, {"dept": "Phòng QC", "code": "1160", "name": "1160 - Đề Xuất Tuyển Dụng (Văn Phòng+Bếp Tổng)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 2, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 1, "T7": 0, "T8": 0}, "total": 4}, {"dept": "Phòng QC", "code": "2030", "name": "2030 - Đề nghị thanh toán không thường xuyên ( ≤ 10)", "cat": "Đề nghị thanh toán", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 0, "T5": 1, "T6": 3, "T7": 3, "T8": 1}, "total": 9}, {"dept": "Phòng QC", "code": "2031", "name": "2031 - Đề nghị thanh toán không thường xuyên ( &gt;10 Triệu )", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 1, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng QC", "code": "3000", "name": "3000 - Đề nghị tạm ứng", "cat": "Đề nghị tạm ứng", "months": {"T1": 0, "T2": 1, "T3": 0, "T4": 0, "T5": 1, "T6": 0, "T7": 2, "T8": 1}, "total": 5}, {"dept": "Phòng QC", "code": "4000", "name": "4000 - Quyết toán tạm ứng", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 0, "T5": 1, "T6": 0, "T7": 0, "T8": 1}, "total": 3}, {"dept": "Phòng R&D 1", "code": "1220", "name": "1220 - Đề xuất thay đổi định mức sản phẩm", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 7, "T2": 4, "T3": 2, "T4": 0, "T5": 4, "T6": 3, "T7": 2, "T8": 1}, "total": 23}, {"dept": "Phòng R&D 2", "code": "1010", "name": "1010 - Đề xuất tiếp khách, thử món", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 2, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 1}, "total": 3}, {"dept": "Phòng R&D 2", "code": "1031", "name": "1031 - Đề xuất mua sắm,chi phí (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 2, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Phòng R&D 2", "code": "1032", "name": "1032 - Đề xuất mua sắm, chi phí ( &gt; 10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 2, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Phòng R&D 2", "code": "1220", "name": "1220 - Đề xuất thay đổi định mức sản phẩm", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 1, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng R&D 2", "code": "1230", "name": "1230 - Quy trình Phát triển đặc biệt - Special Development Process", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 2, "T2": 0, "T3": 1, "T4": 1, "T5": 2, "T6": 7, "T7": 0, "T8": 2}, "total": 15}, {"dept": "Phòng R&D 2", "code": "1310", "name": "1310 - Đề Xuất Chi Phí R&D Tháng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 2, "T4": 2, "T5": 2, "T6": 0, "T7": 0, "T8": 0}, "total": 6}, {"dept": "Phòng R&D 2", "code": "2030", "name": "2030 - Đề nghị thanh toán không thường xuyên ( ≤ 10)", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 7, "T4": 1, "T5": 0, "T6": 0, "T7": 0, "T8": 1}, "total": 9}, {"dept": "Phòng R&D 2", "code": "4000", "name": "4000 - Quyết toán tạm ứng", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 1, "T2": 0, "T3": 2, "T4": 0, "T5": 0, "T6": 0, "T7": 1, "T8": 0}, "total": 4}, {"dept": "Phòng R&D 2", "code": "4030", "name": "4030 - Thanh toán công tác phí", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 1, "T8": 0}, "total": 1}, {"dept": "Phòng Vận Hành", "code": "0011", "name": "0011 - Memo chương trình Marketing  (Fast Casual +KRU)", "cat": "Memo Marketing", "months": {"T1": 0, "T2": 0, "T3": 1, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Vận Hành", "code": "0050", "name": "0050 - Memo chương trình Marketing  (Franchise) - FM", "cat": "Memo Marketing", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 2, "T8": 0}, "total": 2}, {"dept": "Phòng Vận Hành", "code": "0060", "name": "0060 - Memo chương trình Marketing  (Franchise) - CEO", "cat": "Memo Marketing", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 5, "T5": 4, "T6": 6, "T7": 0, "T8": 2}, "total": 17}, {"dept": "Phòng Vận Hành", "code": "1010", "name": "1010 - Đề xuất tiếp khách, thử món", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 1, "T4": 1, "T5": 0, "T6": 1, "T7": 0, "T8": 0}, "total": 3}, {"dept": "Phòng Vận Hành", "code": "1020", "name": "1020 - Đề xuất thiết bị CNTT (&lt;3 Triệu) Chỉ áp dụng cho Nhà Hàng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 2, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Phòng Vận Hành", "code": "1021", "name": "1021 - Đề xuất thiết bị CNTT  (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 1, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Phòng Vận Hành", "code": "1022", "name": "1022 - Đề xuất thiết bị CNTT ( &gt;10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 1, "T3": 0, "T4": 1, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Phòng Vận Hành", "code": "1030", "name": "1030 - Đề xuất mua sắm, chi phí (&lt;3 Triệu)  Chỉ áp dụng cho Nhà Hàng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 3, "T2": 6, "T3": 6, "T4": 0, "T5": 4, "T6": 0, "T7": 5, "T8": 3}, "total": 27}, {"dept": "Phòng Vận Hành", "code": "1031", "name": "1031 - Đề xuất mua sắm,chi phí (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 4, "T2": 3, "T3": 1, "T4": 2, "T5": 2, "T6": 4, "T7": 4, "T8": 2}, "total": 22}, {"dept": "Phòng Vận Hành", "code": "1032", "name": "1032 - Đề xuất mua sắm, chi phí ( &gt; 10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 4, "T2": 2, "T3": 2, "T4": 4, "T5": 4, "T6": 2, "T7": 2, "T8": 1}, "total": 21}, {"dept": "Phòng Vận Hành", "code": "1040", "name": "1040 - Đề xuất sửa chữa (&lt;3 Triệu)  Chỉ áp dụng cho Nhà Hàng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 3, "T7": 3, "T8": 1}, "total": 7}, {"dept": "Phòng Vận Hành", "code": "1041", "name": "1041 - Đề xuất sửa chữa (3Triệu ≤ 10 Triệu) khối Vp dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 3, "T4": 2, "T5": 0, "T6": 0, "T7": 1, "T8": 1}, "total": 7}, {"dept": "Phòng Vận Hành", "code": "1042", "name": "1042 - Đề xuất sửa chữa ( &gt;10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 0, "T3": 1, "T4": 1, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 3}, {"dept": "Phòng Vận Hành", "code": "1050", "name": "1050 - Đề xuất first order nhà hàng mới", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 3, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 4}, {"dept": "Phòng Vận Hành", "code": "1090", "name": "1090 - Đề xuất Đi công tác", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 1, "T3": 0, "T4": 0, "T5": 2, "T6": 2, "T7": 0, "T8": 0}, "total": 5}, {"dept": "Phòng Vận Hành", "code": "1120", "name": "1120 - Đề xuất Đồng phục (tổng hợp)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 2, "T6": 0, "T7": 1, "T8": 0}, "total": 3}, {"dept": "Phòng Vận Hành", "code": "1170", "name": "1170 - Đề Xuất Tuyển Dụng Nhà Hàng ( Cấp Nhân Viên)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 1, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Vận Hành", "code": "1180", "name": "1180 - Đề Xuất Tuyển Dụng Nhà Hàng (Cấp Quản Lý)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 2, "T3": 3, "T4": 1, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 6}, {"dept": "Phòng Vận Hành", "code": "1210", "name": "1210 - Đề xuất Chi phí MKT", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Vận Hành", "code": "1230", "name": "1230 - Quy trình Phát triển đặc biệt - Special Development Process", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 1, "T6": 1, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Phòng Vận Hành", "code": "1290", "name": "1290 - Cấp Tài khoản bán hàng PM POS", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Vận Hành", "code": "2010", "name": "2010 - Đề nghị thanh toán (&lt;3 Triệu) cho Nhà Hàng", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 1, "T8": 0}, "total": 1}, {"dept": "Phòng Vận Hành", "code": "2020", "name": "2020 - Đề nghị thanh toán (thường xuyên)", "cat": "Đề nghị thanh toán", "months": {"T1": 2, "T2": 0, "T3": 1, "T4": 0, "T5": 3, "T6": 2, "T7": 1, "T8": 1}, "total": 10}, {"dept": "Phòng Vận Hành", "code": "2030", "name": "2030 - Đề nghị thanh toán không thường xuyên ( ≤ 10)", "cat": "Đề nghị thanh toán", "months": {"T1": 1, "T2": 1, "T3": 5, "T4": 0, "T5": 0, "T6": 4, "T7": 5, "T8": 1}, "total": 17}, {"dept": "Phòng Vận Hành", "code": "2031", "name": "2031 - Đề nghị thanh toán không thường xuyên ( &gt;10 Triệu )", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 1, "T5": 0, "T6": 2, "T7": 1, "T8": 0}, "total": 4}, {"dept": "Phòng Vận Hành", "code": "2090", "name": "2090 - Đề nghị thưởng nóng", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 1, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Vận Hành", "code": "3000", "name": "3000 - Đề nghị tạm ứng", "cat": "Đề nghị tạm ứng", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 2, "T6": 6, "T7": 6, "T8": 4}, "total": 18}, {"dept": "Phòng Vận Hành", "code": "3020", "name": "3020 - Đề nghị tạm ứng (&lt;3 Triệu) cho nhà hàng", "cat": "Đề nghị tạm ứng", "months": {"T1": 0, "T2": 2, "T3": 0, "T4": 2, "T5": 2, "T6": 0, "T7": 0, "T8": 0}, "total": 6}, {"dept": "Phòng Vận Hành", "code": "4000", "name": "4000 - Quyết toán tạm ứng", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 1, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 5, "T8": 3}, "total": 10}, {"dept": "Phòng Vận Hành", "code": "4020", "name": "4020 - Hoàn ứng công tác phí", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 1, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Phòng Vận Hành", "code": "4020", "name": "4020 - Quyết toán tạm ứng công tác phí", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 2}, "total": 2}, {"dept": "Phòng Vận Hành", "code": "4030", "name": "4030 - Thanh toán công tác phí", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 5, "T8": 2}, "total": 7}, {"dept": "Nhà hàng", "code": "0020", "name": "0020 - Memo chương trình Marketing ( Casual)", "cat": "Memo Marketing", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 3, "T7": 0, "T8": 0}, "total": 3}, {"dept": "Nhà hàng", "code": "0040", "name": "0040 - Memo chương trình Marketing (Fine Dinning)", "cat": "Memo Marketing", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 1, "T8": 0}, "total": 1}, {"dept": "Nhà hàng", "code": "1010", "name": "1010 - Đề xuất tiếp khách, thử món", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 8, "T2": 10, "T3": 2, "T4": 4, "T5": 9, "T6": 9, "T7": 3, "T8": 9}, "total": 54}, {"dept": "Nhà hàng", "code": "1020", "name": "1020 - Đề xuất thiết bị CNTT (&lt;3 Triệu) Chỉ áp dụng cho Nhà Hàng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 2, "T2": 1, "T3": 0, "T4": 0, "T5": 3, "T6": 1, "T7": 0, "T8": 1}, "total": 8}, {"dept": "Nhà hàng", "code": "1021", "name": "1021 - Đề xuất thiết bị CNTT  (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 1, "T5": 0, "T6": 3, "T7": 0, "T8": 1}, "total": 5}, {"dept": "Nhà hàng", "code": "1030", "name": "1030 - Đề xuất mua sắm, chi phí (&lt;3 Triệu)  Chỉ áp dụng cho Nhà Hàng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 59, "T2": 23, "T3": 26, "T4": 14, "T5": 23, "T6": 17, "T7": 27, "T8": 33}, "total": 222}, {"dept": "Nhà hàng", "code": "1031", "name": "1031 - Đề xuất mua sắm,chi phí (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 9, "T2": 9, "T3": 8, "T4": 6, "T5": 10, "T6": 12, "T7": 8, "T8": 10}, "total": 72}, {"dept": "Nhà hàng", "code": "1032", "name": "1032 - Đề xuất mua sắm, chi phí ( &gt; 10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 4, "T2": 0, "T3": 4, "T4": 1, "T5": 0, "T6": 3, "T7": 6, "T8": 1}, "total": 19}, {"dept": "Nhà hàng", "code": "1040", "name": "1040 - Đề xuất sửa chữa (&lt;3 Triệu)  Chỉ áp dụng cho Nhà Hàng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 34, "T2": 20, "T3": 27, "T4": 26, "T5": 24, "T6": 14, "T7": 19, "T8": 18}, "total": 182}, {"dept": "Nhà hàng", "code": "1041", "name": "1041 - Đề xuất sửa chữa (3Triệu ≤ 10 Triệu) khối Vp dưới 3tr vẫn dùng quy trình này", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 4, "T2": 1, "T3": 0, "T4": 1, "T5": 9, "T6": 4, "T7": 5, "T8": 7}, "total": 31}, {"dept": "Nhà hàng", "code": "1042", "name": "1042 - Đề xuất sửa chữa ( &gt;10 Triệu)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 4, "T2": 0, "T3": 2, "T4": 0, "T5": 0, "T6": 1, "T7": 1, "T8": 1}, "total": 9}, {"dept": "Nhà hàng", "code": "1050", "name": "1050 - Đề xuất first order nhà hàng mới", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Nhà hàng", "code": "1080", "name": "1080 - Đề xuất Tính OT (làm thêm giờ)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 1, "T3": 1, "T4": 2, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 4}, {"dept": "Nhà hàng", "code": "1090", "name": "1090 - Đề xuất Đi công tác", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 2, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Nhà hàng", "code": "1130", "name": "1130 - Đề xuất thanh lý tài sản", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 1, "T3": 1, "T4": 3, "T5": 2, "T6": 0, "T7": 2, "T8": 0}, "total": 10}, {"dept": "Nhà hàng", "code": "1140", "name": "1140 - Đề xuất chỉnh bill", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 0, "T3": 1, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Nhà hàng", "code": "1170", "name": "1170 - Đề Xuất Tuyển Dụng Nhà Hàng ( Cấp Nhân Viên)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 22, "T2": 18, "T3": 3, "T4": 4, "T5": 4, "T6": 0, "T7": 0, "T8": 1}, "total": 52}, {"dept": "Nhà hàng", "code": "1180", "name": "1180 - Đề Xuất Tuyển Dụng Nhà Hàng (Cấp Quản Lý)", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 6, "T3": 1, "T4": 0, "T5": 1, "T6": 0, "T7": 0, "T8": 0}, "total": 8}, {"dept": "Nhà hàng", "code": "1220", "name": "1220 - Đề xuất thay đổi định mức sản phẩm", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 1, "T3": 2, "T4": 2, "T5": 1, "T6": 3, "T7": 0, "T8": 0}, "total": 10}, {"dept": "Nhà hàng", "code": "1230", "name": "1230 - Quy trình Phát triển đặc biệt - Special Development Process", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}, {"dept": "Nhà hàng", "code": "1260", "name": "1260 - Giải trình công làm việc hàng tháng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Nhà hàng", "code": "1290", "name": "1290 - Cấp Tài khoản bán hàng PM POS", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 1, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Nhà hàng", "code": "1330", "name": "1330 - Đề xuất Hủy Nguyên Vật Liệu - Hàng Hóa", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 42, "T2": 36, "T3": 31, "T4": 16, "T5": 18, "T6": 8, "T7": 2, "T8": 3}, "total": 156}, {"dept": "Nhà hàng", "code": "1350", "name": "1350 - Đề xuất hủy CCDC (&lt;3 triệu) cho Nhà hàng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 1, "T8": 4}, "total": 5}, {"dept": "Nhà hàng", "code": "1360", "name": "1360 - Đề xuất hủy CCDC (3 triệu ≤ 10 triệu) cho Nhà hàng", "cat": "Đề xuất chi phí/vận hành", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 4}, "total": 4}, {"dept": "Nhà hàng", "code": "2010", "name": "2010 - Đề nghị thanh toán (&lt;3 Triệu) cho Nhà Hàng", "cat": "Đề nghị thanh toán", "months": {"T1": 2, "T2": 4, "T3": 1, "T4": 3, "T5": 1, "T6": 2, "T7": 1, "T8": 0}, "total": 14}, {"dept": "Nhà hàng", "code": "2011", "name": "2011 - Đề nghị thanh toán ( ≤10 Triệu) cho Fine Dining", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 1, "T8": 0}, "total": 1}, {"dept": "Nhà hàng", "code": "2020", "name": "2020 - Đề nghị thanh toán (thường xuyên)", "cat": "Đề nghị thanh toán", "months": {"T1": 4, "T2": 7, "T3": 2, "T4": 2, "T5": 4, "T6": 2, "T7": 3, "T8": 3}, "total": 27}, {"dept": "Nhà hàng", "code": "2030", "name": "2030 - Đề nghị thanh toán không thường xuyên ( ≤ 10)", "cat": "Đề nghị thanh toán", "months": {"T1": 5, "T2": 1, "T3": 8, "T4": 1, "T5": 1, "T6": 3, "T7": 1, "T8": 2}, "total": 22}, {"dept": "Nhà hàng", "code": "2031", "name": "2031 - Đề nghị thanh toán không thường xuyên ( &gt;10 Triệu )", "cat": "Đề nghị thanh toán", "months": {"T1": 0, "T2": 0, "T3": 0, "T4": 0, "T5": 1, "T6": 0, "T7": 1, "T8": 0}, "total": 2}, {"dept": "Nhà hàng", "code": "2040", "name": "2040 - Đề nghị thanh toán Quỹ nhà hàng", "cat": "Đề nghị thanh toán", "months": {"T1": 18, "T2": 19, "T3": 13, "T4": 18, "T5": 14, "T6": 18, "T7": 28, "T8": 18}, "total": 146}, {"dept": "Nhà hàng", "code": "2110", "name": "2110 - Đề nghị thanh toán khách trả thừa/ tip/tiền cọc ( ≤ 1 Triệu )", "cat": "Đề nghị thanh toán", "months": {"T1": 8, "T2": 9, "T3": 7, "T4": 7, "T5": 8, "T6": 8, "T7": 6, "T8": 6}, "total": 59}, {"dept": "Nhà hàng", "code": "2111", "name": "2111 - Đề nghị thanh toán khách trả thừa/ tip/tiền cọc ( &gt; 1 Triệu  )", "cat": "Đề nghị thanh toán", "months": {"T1": 15, "T2": 3, "T3": 12, "T4": 9, "T5": 5, "T6": 7, "T7": 9, "T8": 7}, "total": 67}, {"dept": "Nhà hàng", "code": "3000", "name": "3000 - Đề nghị tạm ứng", "cat": "Đề nghị tạm ứng", "months": {"T1": 2, "T2": 2, "T3": 3, "T4": 1, "T5": 2, "T6": 1, "T7": 2, "T8": 2}, "total": 15}, {"dept": "Nhà hàng", "code": "3020", "name": "3020 - Đề nghị tạm ứng (&lt;3 Triệu) cho nhà hàng", "cat": "Đề nghị tạm ứng", "months": {"T1": 1, "T2": 1, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 2}, {"dept": "Nhà hàng", "code": "4000", "name": "4000 - Quyết toán tạm ứng", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 2, "T2": 1, "T3": 1, "T4": 1, "T5": 1, "T6": 3, "T7": 1, "T8": 2}, "total": 12}, {"dept": "Nhà hàng", "code": "4010", "name": "4010 - Quyết toán tạm ứng (&lt;3 Triệu) cho nhà hàng", "cat": "Quyết toán/hoàn ứng", "months": {"T1": 1, "T2": 0, "T3": 0, "T4": 0, "T5": 0, "T6": 0, "T7": 0, "T8": 0}, "total": 1}];
+const DEPTS3 = ["Nhà hàng", "Phòng Marketing", "Phòng Cung ứng", "Phòng Hành chính Nhân sự", "Phòng Vận Hành", "Bếp Tổng", "Phòng Kế Toán", "Phòng R&D 2", "Phòng Đào Tạo", "Phòng Franchise", "Phòng QC", "Khối Văn phòng - HO", "Phòng R&D 1", "Phòng Dự án & Bảo trì", "New Brand"];
+
+let state3 = { dept:'all', cat:'all', search:'' };
+let charts3 = {};
+let stacked3Instance = null, heatmap3Instance = null;
+
+function getFiltered3(){
+  const s = state3.search.toLowerCase();
+  return RECORDS3.filter(r =>
+    (state3.dept==='all' || r.dept===state3.dept) &&
+    (state3.cat==='all' || r.cat===state3.cat) &&
+    (s==='' || r.name.toLowerCase().includes(s) || r.code.includes(s))
+  );
+}
+
+function initPage3(){
+  const deptSel3 = document.getElementById('filterDept3');
+  [...DEPTS3].forEach(d=>{ const o=document.createElement('option'); o.value=d; o.textContent=d; deptSel3.appendChild(o); });
+  const catSel3 = document.getElementById('filterCat3');
+  CATEGORIES2.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; catSel3.appendChild(o); });
+
+  deptSel3.addEventListener('change', e=>{ state3.dept=e.target.value; renderAll3(); });
+  catSel3.addEventListener('change', e=>{ state3.cat=e.target.value; renderAll3(); });
+  document.getElementById('searchBox3').addEventListener('input', e=>{ state3.search=e.target.value; renderAll3(); });
+  document.getElementById('resetBtn3').addEventListener('click', resetFilters3);
+
+  renderAll3();
+  renderCategoryAccordion('categoryAccordion3');
+}
+
+function renderKPI3(filtered){
+  const total = filtered.reduce((s,r)=>s+r.total,0);
+  document.getElementById('kpiTotal3').textContent = fmtInt(total);
+
+  const diversity = {};
+  filtered.forEach(r=>{ diversity[r.dept]=diversity[r.dept]||new Set(); diversity[r.dept].add(r.code); });
+  const diverseSorted = Object.entries(diversity).map(([d,s])=>[d,s.size]).sort((a,b)=>b[1]-a[1]);
+  if (diverseSorted.length){
+    document.getElementById('kpiDiverseDept3Stat').textContent = fmtInt(diverseSorted[0][1]);
+    document.getElementById('kpiDiverseDept3Name').textContent = diverseSorted[0][0];
+  } else {
+    document.getElementById('kpiDiverseDept3Stat').textContent = '-';
+    document.getElementById('kpiDiverseDept3Name').textContent = '-';
+  }
+
+  const totalByDept = {}; const catByDept = {};
+  filtered.forEach(r=>{ totalByDept[r.dept]=(totalByDept[r.dept]||0)+r.total; catByDept[r.dept]=catByDept[r.dept]||{}; catByDept[r.dept][r.cat]=(catByDept[r.dept][r.cat]||0)+r.total; });
+  let focusDept=null, focusCat=null, focusPct=0;
+  Object.keys(totalByDept).forEach(d=>{
+    if (totalByDept[d] < 5) return;
+    Object.keys(catByDept[d]).forEach(c=>{
+      const pct = catByDept[d][c]/totalByDept[d];
+      if (pct>focusPct){ focusPct=pct; focusDept=d; focusCat=c; }
+    });
+  });
+  if (focusDept){
+    document.getElementById('kpiFocusDept3').textContent = focusDept;
+    document.getElementById('kpiFocusDept3Sub').textContent = `${(focusPct*100).toFixed(0)}% là nhóm ${focusCat}`;
+  } else {
+    document.getElementById('kpiFocusDept3').textContent = '-';
+    document.getElementById('kpiFocusDept3Sub').textContent = '';
+  }
+
+  const catTotals = {};
+  filtered.forEach(r=>{ catTotals[r.cat]=(catTotals[r.cat]||0)+r.total; });
+  const topCat = Object.entries(catTotals).sort((a,b)=>b[1]-a[1])[0];
+  if (topCat){
+    document.getElementById('kpiTopCat3').textContent = topCat[0];
+    document.getElementById('kpiTopCat3Sub').textContent = `${fmtInt(topCat[1])} yêu cầu (${(topCat[1]/total*100).toFixed(1)}%)`;
+  } else {
+    document.getElementById('kpiTopCat3').textContent = '-';
+    document.getElementById('kpiTopCat3Sub').textContent = '';
+  }
+}
+
+function renderStackedChart3(){
+  // luôn dựa trên toàn bộ dữ liệu (không áp filter dept/cat) để giữ bức tranh so sánh toàn cảnh
+  const byDeptCat = {};
+  DEPTS3.forEach(d=>{ byDeptCat[d]={}; CATEGORIES2.forEach(c=>byDeptCat[d][c]=0); });
+  RECORDS3.forEach(r=>{ byDeptCat[r.dept][r.cat]+=r.total; });
+  const deptsSorted = [...DEPTS3].sort((a,b)=>{
+    const totalA = CATEGORIES2.reduce((s,c)=>s+byDeptCat[a][c],0);
+    const totalB = CATEGORIES2.reduce((s,c)=>s+byDeptCat[b][c],0);
+    return totalA-totalB;
+  });
+
+  const el = document.getElementById('stackedChart3');
+  if (!stacked3Instance) stacked3Instance = echarts.init(el);
+  const labelSeries = {
+    name: '__label__', type:'bar', stack:'total', barMaxWidth:22,
+    itemStyle:{ color:'transparent' },
+    tooltip:{ show:false }, silent:true,
+    label:{
+      show:true, position:'right', color:'#0F172A', fontSize:11, fontWeight:700,
+      formatter: (params) => CATEGORIES2.map(c=>byDeptCat[deptsSorted[params.dataIndex]][c]).join('/')
+    },
+    data: deptsSorted.map(()=>0)
+  };
+  stacked3Instance.setOption({
+    tooltip:{ trigger:'axis', axisPointer:{type:'shadow'} },
+    legend:{ bottom:0, textStyle:{fontSize:11} },
+    grid:{ left:170, right:110, top:20, bottom:60 },
+    xAxis:{ type:'value', axisLabel:{ formatter:v=>fmtInt(v) } },
+    yAxis:{ type:'category', data: deptsSorted, axisLabel:{fontSize:11} },
+    series: [...CATEGORIES2.map(c=>({
+      name:c, type:'bar', stack:'total', barMaxWidth:22,
+      itemStyle:{ color: CAT_COLORS[c] },
+      data: deptsSorted.map(d=>byDeptCat[d][c])
+    })), labelSeries]
+  });
+  window.addEventListener('resize', ()=>stacked3Instance.resize());
+}
+
+function renderHeatmap3(){
+  const byDeptCat = {};
+  DEPTS3.forEach(d=>{ byDeptCat[d]={}; CATEGORIES2.forEach(c=>byDeptCat[d][c]=0); });
+  RECORDS3.forEach(r=>{ byDeptCat[r.dept][r.cat]+=r.total; });
+  const deptsSorted = [...DEPTS3].reverse();
+
+  const el = document.getElementById('heatmapChart3');
+  if (!heatmap3Instance) heatmap3Instance = echarts.init(el);
+  const matrix=[]; let maxVal=0;
+  deptsSorted.forEach((d,y)=> CATEGORIES2.forEach((c,x)=>{ const v=byDeptCat[d][c]; matrix.push([x,y,v]); if(v>maxVal) maxVal=v; }));
+
+  heatmap3Instance.setOption({
+    tooltip:{ position:'top', formatter:p=>`${deptsSorted[p.data[1]]}<br/>${CATEGORIES2[p.data[0]]}: <b>${fmtInt(p.data[2])}</b> yêu cầu` },
+    grid:{ left:170, right:20, top:10, bottom:70 },
+    xAxis:{ type:'category', data:CATEGORIES2, axisLabel:{fontSize:9.5, rotate:20}, splitArea:{show:true} },
+    yAxis:{ type:'category', data:deptsSorted, axisLabel:{fontSize:11}, splitArea:{show:true} },
+    visualMap:{ min:0, max:maxVal, calculable:true, orient:'horizontal', left:'center', bottom:-5,
+      inRange:{ color:['#FDF2F8','#F472B6','#8B5CF6','#5B21B6'] }, textStyle:{fontSize:10} },
+    series:[{ type:'heatmap', data:matrix, label:{show:true, fontSize:10, color:'#0F172A', formatter:p=>p.data[2]>0?p.data[2]:''} }]
+  });
+  window.addEventListener('resize', ()=>heatmap3Instance.resize());
+}
+
+function renderRankChart3(filtered){
+  const byProcess = {};
+  filtered.forEach(r=>{ byProcess[r.name] = (byProcess[r.name]||0) + r.total; });
+  const sorted = Object.entries(byProcess).sort((a,b)=>b[1]-a[1]).slice(0,15);
+
+  document.getElementById('rank3Title').textContent = state3.dept==='all'
+    ? 'Top quy trình theo tổng số lượng (tất cả phòng ban)'
+    : `Top quy trình của ${state3.dept}`;
+
+  const ctx = document.getElementById('rankChart3');
+  if (charts3.rank) charts3.rank.destroy();
+  charts3.rank = new Chart(ctx, {
+    type:'bar',
+    plugins:[ChartDataLabels],
+    data:{ labels: sorted.map(([k])=>k), datasets:[{ data: sorted.map(([,v])=>v), backgroundColor:'#8B5CF6', borderRadius:4 }] },
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false, layout:{padding:{right:36}},
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${fmtInt(c.parsed.x)} yêu cầu`}},
+        datalabels:{ anchor:'end', align:'right', offset:4, color:'#0F172A', font:{weight:700,size:11}, formatter:v=>fmtInt(v) } },
+      scales:{ x:{ beginAtZero:true, ticks:{callback:v=>fmtInt(v)} }, y:{ ticks:{font:{size:11.5}} } }
+    }
+  });
+}
+
+let gridInstance3 = null;
+function renderTable3(filtered){
+  const columns = ['Phòng ban','Mã','Quy trình','Nhóm', ...MONTHS, 'Tổng cộng'];
+  const data = [...filtered].sort((a,b)=>b.total-a.total).map(r => [r.dept, r.code, r.name, r.cat, ...MONTHS.map(m=>r.months[m]), r.total]);
+  const container = document.getElementById('dataTable3');
+  container.innerHTML = '';
+  if (data.length === 0){
+    container.innerHTML = '<div class="text-center py-8 text-sm" style="color:var(--color-text-muted)">Không có dữ liệu phù hợp với bộ lọc này.</div>';
+    return;
+  }
+  gridInstance3 = new gridjs.Grid({
+    columns, data, sort:true, pagination:{limit:15},
+    className:{ table:'text-sm' },
+    style:{ th:{ 'font-size':'12px' }, td:{ 'font-size':'12.5px' } }
+  }).render(container);
+}
+
+function renderAll3(){
+  const filtered = getFiltered3();
+  document.getElementById('emptyState3').classList.toggle('hidden', filtered.length > 0);
+  renderKPI3(filtered);
+  renderStackedChart3();
+  renderHeatmap3();
+  renderRankChart3(filtered);
+  renderTable3(filtered);
+}
+
+function resetFilters3(){
+  state3 = { dept:'all', cat:'all', search:'' };
+  document.getElementById('filterDept3').value='all';
+  document.getElementById('filterCat3').value='all';
+  document.getElementById('searchBox3').value='';
+  renderAll3();
+}
+
+// ======================================================================================
+// ==================================== PAGE 4 DATA =====================================
+// ======================================================================================
+const RECORDS4 = [{"code": "0010", "name": "0010 - Memo chương trình Marketing  (Fast Casual + Tất cả nhà hàng)", "approver": "TGD", "cat": "Memo Marketing", "total": 27}, {"code": "0011", "name": "0011 - Memo chương trình Marketing  (Fast Casual +KRU)", "approver": "TGD", "cat": "Memo Marketing", "total": 62}, {"code": "0020", "name": "0020 - Memo chương trình Marketing ( Casual)", "approver": "TGD", "cat": "Memo Marketing", "total": 14}, {"code": "0030", "name": "0030 - Memo chương trình Marketing (Casual Dinning)", "approver": "TGD", "cat": "Memo Marketing", "total": 50}, {"code": "0040", "name": "0040 - Memo chương trình Marketing (Fine Dinning)", "approver": "TGD", "cat": "Memo Marketing", "total": 25}, {"code": "0050", "name": "0050 - Memo chương trình Marketing  (Franchise) - FM", "approver": "P.TGD", "cat": "Memo Marketing", "total": 12}, {"code": "0060", "name": "0060 - Memo chương trình Marketing  (Franchise) - CEO", "approver": "TGD", "cat": "Memo Marketing", "total": 16}, {"code": "1000", "name": "1000 - Phiếu đặt nguyên liệu phòng gia vị", "approver": "TGD", "cat": "Đề xuất chi phí/vận hành", "total": 2}, {"code": "1010", "name": "1010 - Đề xuất tiếp khách, thử món", "approver": "FD", "cat": "Đề xuất chi phí/vận hành", "total": 72}, {"code": "1020", "name": "1020 - Đề xuất thiết bị CNTT (< 3 Triệu) Chỉ áp dụng cho Nhà Hàng", "approver": "AM", "cat": "Đề xuất chi phí/vận hành", "total": 10}, {"code": "1020", "name": "1020 - Đề xuất thiết bị CNTT (< 3 Triệu) Chỉ áp dụng cho Nhà Hàng", "approver": "GM", "cat": "Đề xuất chi phí/vận hành", "total": 10}, {"code": "1021", "name": "1021 - Đề xuất thiết bị CNTT  (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "approver": "FD", "cat": "Đề xuất chi phí/vận hành", "total": 21}, {"code": "1022", "name": "1022 - Đề xuất thiết bị CNTT ( > 10 Triệu)", "approver": "TGD", "cat": "Đề xuất chi phí/vận hành", "total": 12}, {"code": "1030", "name": "1030 - Đề xuất mua sắm, chi phí (< 3 Triệu)  Chỉ áp dụng cho Nhà Hàng", "approver": "AM", "cat": "Đề xuất chi phí/vận hành", "total": 248}, {"code": "1030", "name": "1030 - Đề xuất mua sắm, chi phí (< 3 Triệu)  Chỉ áp dụng cho Nhà Hàng", "approver": "GM", "cat": "Đề xuất chi phí/vận hành", "total": 248}, {"code": "1031", "name": "1031 - Đề xuất mua sắm,chi phí (3Triệu ≤ 10 Triệu) Khối VP dưới 3tr vẫn dùng quy trình này", "approver": "FD", "cat": "Đề xuất chi phí/vận hành", "total": 204}, {"code": "1032", "name": "1032 - Đề xuất mua sắm, chi phí ( > 10 Triệu)", "approver": "TGD", "cat": "Đề xuất chi phí/vận hành", "total": 90}, {"code": "1040", "name": "1040 - Đề xuất sửa chữa (< 3 Triệu)  Chỉ áp dụng cho Nhà Hàng", "approver": "PM", "cat": "Đề xuất chi phí/vận hành", "total": 189}, {"code": "1041", "name": "1041 - Đề xuất sửa chữa (3Triệu ≤ 10 Triệu) khối Vp dưới 3tr vẫn dùng quy trình này", "approver": "FD", "cat": "Đề xuất chi phí/vận hành", "total": 61}, {"code": "1042", "name": "1042 - Đề xuất sửa chữa ( > 10 Triệu)", "approver": "TGD", "cat": "Đề xuất chi phí/vận hành", "total": 18}, {"code": "1050", "name": "1050 - Đề xuất first order nhà hàng mới", "approver": "TGD", "cat": "Đề xuất chi phí/vận hành", "total": 5}, {"code": "1060", "name": "1060 - Đề xuất tạo mới/ đổi NCC", "approver": "TGD", "cat": "Đề xuất chi phí/vận hành", "total": 1}, {"code": "1070", "name": "1070 - Duyệt giá mua hàng tháng", "approver": "TGD", "cat": "Đề xuất chi phí/vận hành", "total": 7}, {"code": "1080", "name": "1080 - Đề xuất Tính OT (làm thêm giờ)", "approver": "TP.HR", "cat": "Đề xuất chi phí/vận hành", "total": 14}, {"code": "1090", "name": "1090 - Đề xuất Đi công tác", "approver": "TGD", "cat": "Đề xuất chi phí/vận hành", "total": 27}, {"code": "1111", "name": "1111 - Đề Xuất Điều Chỉnh Staffing/ Định Biên Phòng Ban", "approver": "TGD", "cat": "Đề xuất chi phí/vận hành", "total": 2}, {"code": "1120", "name": "1120 - Đề xuất Đồng phục (tổng hợp)", "approver": "TGD", "cat": "Đề xuất chi phí/vận hành", "total": 4}, {"code": "1130", "name": "1130 - Đề xuất thanh lý tài sản", "approver": "FD", "cat": "Đề xuất chi phí/vận hành", "total": 11}, {"code": "1140", "name": "1140 - Đề xuất chỉnh bill", "approver": "KT trưởng", "cat": "Đề xuất chi phí/vận hành", "total": 2}, {"code": "1160", "name": "1160 - Đề Xuất Tuyển Dụng (Văn Phòng+Bếp Tổng)", "approver": "TGD", "cat": "Đề xuất chi phí/vận hành", "total": 21}, {"code": "1170", "name": "1170 - Đề Xuất Tuyển Dụng Nhà Hàng ( Cấp Nhân Viên)", "approver": "TP.HR", "cat": "Đề xuất chi phí/vận hành", "total": 53}, {"code": "1180", "name": "1180 - Đề Xuất Tuyển Dụng Nhà Hàng (Cấp Quản Lý)", "approver": "TGD", "cat": "Đề xuất chi phí/vận hành", "total": 15}, {"code": "1210", "name": "1210 - Đề xuất Chi phí MKT", "approver": "TGD", "cat": "Đề xuất chi phí/vận hành", "total": 91}, {"code": "1211", "name": "1211 - Đề xuất Chi phí MKT (MWK & S79)", "approver": "TGD", "cat": "Đề xuất chi phí/vận hành", "total": 28}, {"code": "1212", "name": "1212 - Đề xuất Chi phí MKT (< 10Triệu)", "approver": "FD", "cat": "Đề xuất chi phí/vận hành", "total": 53}, {"code": "1220", "name": "1220 - Đề xuất thay đổi định mức sản phẩm", "approver": "TGD", "cat": "Đề xuất chi phí/vận hành", "total": 34}, {"code": "1230", "name": "1230 - Quy trình Phát triển đặc biệt - Special Development Process", "approver": "TGD", "cat": "Đề xuất chi phí/vận hành", "total": 21}, {"code": "1260", "name": "1260 - Giải trình công làm việc hàng tháng", "approver": "TGD", "cat": "Đề xuất chi phí/vận hành", "total": 2}, {"code": "1290", "name": "1290 - Cấp Tài khoản bán hàng PM POS", "approver": "KT tổng hợp", "cat": "Đề xuất chi phí/vận hành", "total": 3}, {"code": "1300", "name": "1300 - Duyệt so sánh giá", "approver": "TGD", "cat": "Đề xuất chi phí/vận hành", "total": 10}, {"code": "1310", "name": "1310 - Đề Xuất Chi Phí R&D Tháng", "approver": "TGD", "cat": "Đề xuất chi phí/vận hành", "total": 6}, {"code": "1330", "name": "1330 - Đề xuất Hủy Nguyên Vật Liệu - Hàng Hóa", "approver": "HOO", "cat": "Đề xuất chi phí/vận hành", "total": 156}, {"code": "1330", "name": "1330 - Đề xuất Hủy Nguyên Vật Liệu - Hàng Hóa", "approver": "GM", "cat": "Đề xuất chi phí/vận hành", "total": 156}, {"code": "1340", "name": "1340 - Đề xuất bán Voucher", "approver": "P.TGD", "cat": "Đề xuất chi phí/vận hành", "total": 1}, {"code": "1350", "name": "1350 - Đề xuất hủy CCDC (<3 triệu) cho Nhà hàng", "approver": "AM", "cat": "Đề xuất chi phí/vận hành", "total": 5}, {"code": "1360", "name": "1360 - Đề xuất hủy CCDC (3 triệu ≤ 10 triệu) cho Nhà hàng", "approver": "GM", "cat": "Đề xuất chi phí/vận hành", "total": 4}, {"code": "1360", "name": "1360 - Đề xuất hủy CCDC (3 triệu ≤ 10 triệu) cho Nhà hàng", "approver": "HOO", "cat": "Đề xuất chi phí/vận hành", "total": 4}, {"code": "2010", "name": "2010 - Đề nghị thanh toán (<3 Triệu) cho Nhà Hàng", "approver": "KT trưởng", "cat": "Đề nghị thanh toán", "total": 16}, {"code": "2011", "name": "2011 - Đề nghị thanh toán ( ≤10 Triệu) cho Fine Dining", "approver": "KT trưởng", "cat": "Đề nghị thanh toán", "total": 1}, {"code": "2020", "name": "2020 - Đề nghị thanh toán (thường xuyên)", "approver": "FD", "cat": "Đề nghị thanh toán", "total": 162}, {"code": "2030", "name": "2030 - Đề nghị thanh toán không thường xuyên ( ≤ 10)", "approver": "FD", "cat": "Đề nghị thanh toán", "total": 360}, {"code": "2031", "name": "2031 - Đề nghị thanh toán không thường xuyên (> 10 Triệu )", "approver": "TGD", "cat": "Đề nghị thanh toán", "total": 225}, {"code": "2040", "name": "2040 - Đề nghị thanh toán Quỹ nhà hàng", "approver": "KT trưởng", "cat": "Đề nghị thanh toán", "total": 148}, {"code": "2060", "name": "2060 - Đề Nghị Thanh Toán Thưởng Hằng Tháng/Quý", "approver": "TGD", "cat": "Đề nghị thanh toán", "total": 30}, {"code": "2090", "name": "2090 - Đề nghị thưởng nóng", "approver": "FD", "cat": "Đề nghị thanh toán", "total": 5}, {"code": "2110", "name": "2110 - Đề nghị thanh toán khách trả thừa/ tip/tiền cọc ( ≤ 1 Triệu )", "approver": "KT trưởng", "cat": "Đề nghị thanh toán", "total": 59}, {"code": "2111", "name": "2111 - Đề nghị thanh toán khách trả thừa/ tip/tiền cọc (> 1 Triệu  )", "approver": "KT trưởng", "cat": "Đề nghị thanh toán", "total": 68}, {"code": "3000", "name": "3000 - Đề nghị tạm ứng", "approver": "FD", "cat": "Đề nghị tạm ứng", "total": 85}, {"code": "3010", "name": "3010 - Đề nghị tạm ứng tiền xăng xe", "approver": "KT trưởng", "cat": "Đề nghị tạm ứng", "total": 34}, {"code": "3020", "name": "3020 - Đề nghị tạm ứng (<3 Triệu) cho nhà hàng", "approver": "KT trưởng", "cat": "Đề nghị tạm ứng", "total": 8}, {"code": "4000", "name": "4000 - Quyết toán tạm ứng", "approver": "FD", "cat": "Quyết toán/hoàn ứng", "total": 54}, {"code": "4010", "name": "4010 - Quyết toán tạm ứng (<3 Triệu) cho nhà hàng", "approver": "KT trưởng", "cat": "Quyết toán/hoàn ứng", "total": 1}, {"code": "4020", "name": "4020 - Hoàn ứng công tác phí", "approver": "FD", "cat": "Quyết toán/hoàn ứng", "total": 7}, {"code": "4020", "name": "4020 - Quyết toán tạm ứng công tác phí", "approver": "FD", "cat": "Quyết toán/hoàn ứng", "total": 2}, {"code": "4030", "name": "4030 - Thanh toán công tác phí", "approver": "FD", "cat": "Quyết toán/hoàn ứng", "total": 13}];
+const APPROVERS4 = ["AM", "FD", "GM", "HOO", "KT trưởng", "KT tổng hợp", "P.TGD", "PM", "TGD", "TP.HR"];
+const APPROVER_COLORS4 = ['#0891B2','#F59E0B','#8B5CF6','#10B981','#EC4899','#3B82F6','#F97316','#14B8A6','#A855F7','#84CC16','#EF4444','#64748B'];
+
+let state4 = { approver:'all', cat:'all', search:'' };
+let charts4 = {};
+let donut4Instance = null, stacked4Instance = null;
+
+function getFiltered4(){
+  const s = state4.search.toLowerCase();
+  return RECORDS4.filter(r =>
+    (state4.approver==='all' || r.approver===state4.approver) &&
+    (state4.cat==='all' || r.cat===state4.cat) &&
+    (s==='' || r.name.toLowerCase().includes(s) || r.code.includes(s))
+  );
+}
+
+function initPage4(){
+  const approverSel4 = document.getElementById('filterApprover4');
+  const tableApproverSel4 = document.getElementById('tableFilterApprover4');
+  [...APPROVERS4].forEach(a=>{
+    approverSel4.appendChild(new Option(a, a));
+    tableApproverSel4.appendChild(new Option(a, a));
+  });
+  const catSel4 = document.getElementById('filterCat4');
+  const tableCatSel4 = document.getElementById('tableFilterCat4');
+  CATEGORIES2.forEach(c=>{
+    catSel4.appendChild(new Option(c, c));
+    tableCatSel4.appendChild(new Option(c, c));
+  });
+
+  function setApprover4(v){ state4.approver=v; approverSel4.value=v; tableApproverSel4.value=v; renderAll4(); }
+  function setCat4(v){ state4.cat=v; catSel4.value=v; tableCatSel4.value=v; renderAll4(); }
+
+  approverSel4.addEventListener('change', e=>setApprover4(e.target.value));
+  tableApproverSel4.addEventListener('change', e=>setApprover4(e.target.value));
+  catSel4.addEventListener('change', e=>setCat4(e.target.value));
+  tableCatSel4.addEventListener('change', e=>setCat4(e.target.value));
+  document.getElementById('searchBox4').addEventListener('input', e=>{ state4.search=e.target.value; renderAll4(); });
+  document.getElementById('resetBtn4').addEventListener('click', resetFilters4);
+
+  renderAll4();
+  renderCategoryAccordion('categoryAccordion4');
+}
+
+function renderKPI4(filtered){
+  const total = filtered.reduce((s,r)=>s+r.total,0);
+
+  const byApprover = {};
+  filtered.forEach(r=>{ byApprover[r.approver]=(byApprover[r.approver]||0)+r.total; });
+  document.getElementById('kpiApproverCount4').textContent = fmtInt(Object.keys(byApprover).length);
+  document.getElementById('kpiApproverCount4Sub').textContent = `trên tổng ${APPROVERS4.length} chức danh PD`;
+
+  const topApprover = Object.entries(byApprover).sort((a,b)=>b[1]-a[1])[0];
+  if (topApprover){
+    document.getElementById('kpiTopApprover4').textContent = topApprover[0];
+    document.getElementById('kpiTopApprover4Sub').textContent = `${fmtInt(topApprover[1])} yêu cầu (${(topApprover[1]/total*100).toFixed(1)}%)`;
+  } else {
+    document.getElementById('kpiTopApprover4').textContent = '-';
+    document.getElementById('kpiTopApprover4Sub').textContent = '';
+  }
+
+  const catTotals = {};
+  filtered.forEach(r=>{ catTotals[r.cat]=(catTotals[r.cat]||0)+r.total; });
+  const topCat = Object.entries(catTotals).sort((a,b)=>b[1]-a[1])[0];
+  if (topCat){
+    document.getElementById('kpiTopCat4').textContent = topCat[0];
+    document.getElementById('kpiTopCat4Sub').textContent = `${fmtInt(topCat[1])} yêu cầu (${(topCat[1]/total*100).toFixed(1)}%)`;
+  } else {
+    document.getElementById('kpiTopCat4').textContent = '-';
+    document.getElementById('kpiTopCat4Sub').textContent = '';
+  }
+}
+
+function renderDonutChart4(){
+  // luôn dựa trên toàn bộ dữ liệu, chỉ áp filter nhóm quy trình (nếu có) để giữ bức tranh cơ cấu cấp duyệt đầy đủ
+  const base = state4.cat==='all' ? RECORDS4 : RECORDS4.filter(r=>r.cat===state4.cat);
+  const byApprover = {};
+  base.forEach(r=>{ byApprover[r.approver]=(byApprover[r.approver]||0)+r.total; });
+  const sorted = Object.entries(byApprover).sort((a,b)=>b[1]-a[1]);
+  const total = sorted.reduce((s,[,v])=>s+v,0);
+
+  const el = document.getElementById('donutChart4');
+  if (!donut4Instance) donut4Instance = echarts.init(el);
+  const data = sorted.map(([name,value],i)=>({ name, value, itemStyle:{ color: APPROVER_COLORS4[i % APPROVER_COLORS4.length] } }));
+
+  donut4Instance.setOption({
+    tooltip:{ trigger:'item', formatter:p=>`${p.name}<br/><b>${fmtInt(p.value)}</b> yêu cầu (${p.percent}%)` },
+    series:[{
+      type:'pie', radius:['38%','65%'], center:['50%','50%'], avoidLabelOverlap:true,
+      label:{ show:true, formatter:p=>`${p.percent}% - ${p.name}`, fontSize:12, lineHeight:16 },
+      labelLine:{ show:true, length:14, length2:10 },
+      data
+    }]
+  });
+  window.addEventListener('resize', ()=>donut4Instance.resize());
+}
+
+function renderRankChart4(filtered){
+  const isSingleApprover = state4.approver !== 'all';
+  const titleEl = document.getElementById('rank4Title');
+  const ctx = document.getElementById('rankChart4');
+  if (charts4.rank) charts4.rank.destroy();
+
+  if (isSingleApprover){
+    // Đã chọn 1 cấp duyệt cụ thể -> liệt kê tất cả quy trình mà cấp đó duyệt cuối cùng
+    titleEl.textContent = `Tất cả quy trình do ${state4.approver} duyệt cuối cùng`;
+    const byProcess = {};
+    filtered.forEach(r=>{ byProcess[r.name] = (byProcess[r.name]||0) + r.total; });
+    const sorted = Object.entries(byProcess).sort((a,b)=>b[1]-a[1]);
+    document.getElementById('rankChart4Inner').style.height = Math.max(360, sorted.length * 34) + 'px';
+    charts4.rank = new Chart(ctx, {
+      type:'bar',
+      plugins:[ChartDataLabels],
+      data:{ labels: sorted.map(([k])=>k), datasets:[{ data: sorted.map(([,v])=>v), backgroundColor:'#8B5CF6', borderRadius:4 }] },
+      options:{
+        indexAxis:'y', responsive:true, maintainAspectRatio:false, layout:{padding:{right:36}},
+        plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${fmtInt(c.parsed.x)} yêu cầu`}},
+          datalabels:{ anchor:'end', align:'right', offset:4, color:'#0F172A', font:{weight:700,size:11}, formatter:v=>fmtInt(v) } },
+        scales:{ x:{ beginAtZero:true, ticks:{callback:v=>fmtInt(v)} }, y:{ ticks:{font:{size:11}} } }
+      }
+    });
+  } else {
+    // Chưa chọn cấp duyệt cụ thể -> xếp hạng theo cấp duyệt
+    titleEl.textContent = 'Xếp hạng cấp duyệt theo tổng số lượng xử lý';
+    document.getElementById('rankChart4Inner').style.height = '420px';
+    const byApprover = {};
+    filtered.forEach(r=>{ byApprover[r.approver]=(byApprover[r.approver]||0)+r.total; });
+    const sorted = Object.entries(byApprover).sort((a,b)=>b[1]-a[1]);
+    charts4.rank = new Chart(ctx, {
+      type:'bar',
+      plugins:[ChartDataLabels],
+      data:{ labels: sorted.map(([k])=>k), datasets:[{ data: sorted.map(([,v])=>v), backgroundColor:'#0891B2', borderRadius:4 }] },
+      options:{
+        indexAxis:'y', responsive:true, maintainAspectRatio:false, layout:{padding:{right:36}},
+        plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${fmtInt(c.parsed.x)} yêu cầu`}},
+          datalabels:{ anchor:'end', align:'right', offset:4, color:'#0F172A', font:{weight:700,size:11}, formatter:v=>fmtInt(v) } },
+        scales:{ x:{ beginAtZero:true, ticks:{callback:v=>fmtInt(v)} }, y:{ ticks:{font:{size:11.5}} } },
+        onClick:(evt,els)=>{
+          if(els.length){
+            const a = sorted[els[0].index][0];
+            state4.approver = (state4.approver===a) ? 'all' : a;
+            document.getElementById('filterApprover4').value = state4.approver;
+            document.getElementById('tableFilterApprover4').value = state4.approver;
+            renderAll4();
+          }
+        }
+      }
+    });
+  }
+}
+
+function renderStackedChart4(){
+  // luôn dựa trên toàn bộ dữ liệu để giữ bức tranh so sánh toàn cảnh
+  const byApproverCat = {};
+  APPROVERS4.forEach(a=>{ byApproverCat[a]={}; CATEGORIES2.forEach(c=>byApproverCat[a][c]=0); });
+  RECORDS4.forEach(r=>{ byApproverCat[r.approver][r.cat]+=r.total; });
+  const approversSorted = [...APPROVERS4].sort((a,b)=>{
+    const totalA = CATEGORIES2.reduce((s,c)=>s+byApproverCat[a][c],0);
+    const totalB = CATEGORIES2.reduce((s,c)=>s+byApproverCat[b][c],0);
+    return totalA-totalB;
+  });
+
+  const el = document.getElementById('stackedChart4');
+  if (!stacked4Instance) stacked4Instance = echarts.init(el);
+  const labelSeries = {
+    name:'__label__', type:'bar', stack:'total', barMaxWidth:22,
+    itemStyle:{ color:'transparent' }, tooltip:{ show:false }, silent:true,
+    label:{
+      show:true, position:'right', color:'#0F172A', fontSize:11, fontWeight:700,
+      formatter: (params) => CATEGORIES2.map(c=>byApproverCat[approversSorted[params.dataIndex]][c]).join('/')
+    },
+    data: approversSorted.map(()=>0)
+  };
+  stacked4Instance.setOption({
+    tooltip:{ trigger:'axis', axisPointer:{type:'shadow'} },
+    legend:{ bottom:0, textStyle:{fontSize:11} },
+    grid:{ left:110, right:110, top:20, bottom:60 },
+    xAxis:{ type:'value', axisLabel:{ formatter:v=>fmtInt(v) } },
+    yAxis:{ type:'category', data: approversSorted, axisLabel:{fontSize:11} },
+    series: [...CATEGORIES2.map(c=>({
+      name:c, type:'bar', stack:'total', barMaxWidth:22,
+      itemStyle:{ color: CAT_COLORS[c] },
+      data: approversSorted.map(a=>byApproverCat[a][c])
+    })), labelSeries]
+  });
+  window.addEventListener('resize', ()=>stacked4Instance.resize());
+}
+
+let gridInstance4 = null;
+function renderTable4(filtered){
+  const container = document.getElementById('dataTable4');
+  container.innerHTML = '';
+  if (filtered.length === 0){
+    container.innerHTML = '<div class="text-center py-8 text-sm" style="color:var(--color-text-muted)">Không có dữ liệu phù hợp với bộ lọc này.</div>';
+    return;
+  }
+  const columns = ['Mã','Quy trình','Nhóm','Duyệt cuối cùng','Số lượng'];
+  const data = [...filtered].sort((a,b)=>b.total-a.total).map(r => [r.code, r.name, r.cat, r.approver, r.total]);
+  gridInstance4 = new gridjs.Grid({
+    columns, data, sort:true, pagination:{limit:15},
+    className:{ table:'text-sm' },
+    style:{ th:{ 'font-size':'12px' }, td:{ 'font-size':'12.5px' } }
+  }).render(container);
+}
+
+function renderAll4(){
+  const filtered = getFiltered4();
+  document.getElementById('emptyState4').classList.toggle('hidden', filtered.length > 0);
+  renderKPI4(filtered);
+  renderDonutChart4();
+  renderRankChart4(filtered);
+  renderStackedChart4();
+  renderTable4(filtered);
+}
+
+function resetFilters4(){
+  state4 = { approver:'all', cat:'all', search:'' };
+  document.getElementById('filterApprover4').value='all';
+  document.getElementById('filterCat4').value='all';
+  document.getElementById('tableFilterApprover4').value='all';
+  document.getElementById('tableFilterCat4').value='all';
+  document.getElementById('searchBox4').value='';
+  renderAll4();
+}
+</script>
+</body>
+</html>
