@@ -79,6 +79,7 @@
     <button id="tabBtn2" class="tab-btn" onclick="showPage(2)">Trang 2 &middot; SL quy trình theo tháng</button>
     <button id="tabBtn3" class="tab-btn" onclick="showPage(3)">Trang 3 &middot; Quy trình theo phòng ban</button>
     <button id="tabBtn4" class="tab-btn" onclick="showPage(4)">Trang 4 &middot; Cấp duyệt theo quy trình</button>
+    <button id="tabBtn5" class="tab-btn" onclick="showPage(5)">Trang 5 &middot; Tham gia duyệt theo vị trí</button>
   </div>
 </header>
 
@@ -519,6 +520,102 @@
   </footer>
 </div><!-- /page4 -->
 
+<!-- ======================= PAGE 5 ======================= -->
+<div id="page5" class="page-content hidden">
+
+  <p class="text-sm mb-4" style="color:var(--color-text-light)">Số lượng tham gia công việc theo từng chức danh ở từng bước. Báo cáo sẽ hiển thị thông tin 3 bước cuối cùng trong quy trình công việc.</p>
+
+  <!-- FILTERS -->
+  <div class="card mb-6 flex flex-wrap items-end gap-4">
+    <div>
+      <label class="block text-xs font-semibold mb-1" style="color:var(--color-text-light)">Bước duyệt</label>
+      <select id="filterStep5" class="w-56">
+        <option value="all">Cả 3 bước (tổng)</option>
+        <option value="step1">Duyệt gần kế cuối</option>
+        <option value="step2">Duyệt kế cuối</option>
+        <option value="step3">Duyệt cuối cùng</option>
+      </select>
+    </div>
+    <div class="flex-1 min-w-[200px]">
+      <label class="block text-xs font-semibold mb-1" style="color:var(--color-text-light)">Tìm kiếm chức danh</label>
+      <input type="text" id="searchBox5" placeholder="Nhập tên chức danh..." class="w-full">
+    </div>
+    <button id="resetBtn5" class="text-sm font-semibold px-4 py-2 rounded-lg border" style="border-color:var(--color-border); color:var(--color-text-light)">↺ Bỏ lọc</button>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="card">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="kpi-icon" style="background:#ECFEFF;">📥</div>
+        <span class="text-h2" style="color:var(--color-text-light)">Tổng lượt tham gia</span>
+      </div>
+      <div class="text-display" id="kpiTotal5" style="color:var(--color-primary-dark)">0</div>
+      <div class="text-xs mt-1" style="color:var(--color-text-muted)" id="kpiTotal5Sub">3 bước &middot; 22 chức danh</div>
+    </div>
+    <div class="card">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="kpi-icon" style="background:#FEF3C7;">🧑&zwj;💼</div>
+        <span class="text-h2" style="color:var(--color-text-light)">Số chức danh tham gia</span>
+      </div>
+      <div class="text-display" id="kpiPositionCount5" style="color:#B45309">0</div>
+      <div class="text-xs mt-1" style="color:var(--color-text-muted)" id="kpiPositionCount5Sub">&nbsp;</div>
+    </div>
+    <div class="card">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="kpi-icon" style="background:#EDE9FE;">🏆</div>
+        <span class="text-h2" style="color:var(--color-text-light)">Chức danh tham gia nhiều nhất</span>
+      </div>
+      <div class="text-display" style="font-size:22px; color:#5B21B6" id="kpiTopPosition5">-</div>
+      <div class="text-xs mt-1" style="color:var(--color-text-muted)" id="kpiTopPosition5Sub">&nbsp;</div>
+    </div>
+    <div class="card">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="kpi-icon" style="background:#FEE2E2;">🔀</div>
+        <span class="text-h2" style="color:var(--color-text-light)">Bước nhiều lượt nhất</span>
+      </div>
+      <div class="text-display" style="font-size:20px; color:#B91C1C" id="kpiTopStep5">-</div>
+      <div class="text-xs mt-1" style="color:var(--color-text-muted)" id="kpiTopStep5Sub">&nbsp;</div>
+    </div>
+  </div>
+
+  <!-- CHART ROW 1 -->
+  <div class="grid grid-cols-1 gap-4 mb-4">
+    <div class="card">
+      <h3 class="text-h2 mb-1">Cơ cấu 3 bước theo chức danh</h3>
+      <p class="text-xs mb-2" style="color:var(--color-text-muted)">Số cuối mỗi thanh: x/y/z = Duyệt gần kế cuối / Duyệt kế cuối / Duyệt cuối cùng</p>
+      <div id="stackedChart5" style="height:560px;"></div>
+    </div>
+  </div>
+
+  <!-- CHART ROW 2 -->
+  <div class="grid grid-cols-1 gap-4 mb-4">
+    <div class="card">
+      <h3 class="text-h2 mb-3" id="rank5Title">Xếp hạng chức danh theo tổng lượt tham gia</h3>
+      <div id="rankChart5Wrap" style="max-height:600px; overflow-y:auto;">
+        <div id="rankChart5Inner" style="height:420px;"><canvas id="rankChart5"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div id="emptyState5" class="card text-center py-12 hidden">
+    <div class="text-4xl mb-3">📭</div>
+    <p style="color:var(--color-text-light)">Không có dữ liệu phù hợp với bộ lọc này.</p>
+    <button onclick="resetFilters5()" class="mt-3 text-sm font-semibold px-4 py-2 rounded-lg text-white" style="background:var(--color-primary)">Bỏ lọc</button>
+  </div>
+
+  <!-- DATA TABLE -->
+  <div class="card">
+    <h3 class="text-h2 mb-3">Bảng chi tiết: Chức danh &times; 3 bước duyệt</h3>
+    <div id="dataTable5"></div>
+  </div>
+
+  <footer class="text-xs text-center py-8" style="color:var(--color-text-muted)">
+    Đã đọc 24 dòng từ Sheet "SL tham gia duyệt theo vị trí" &middot; 22 chức danh, tổng 11,525 lượt tham gia trên 3 bước (Duyệt gần kế cuối, Duyệt kế cuối, Duyệt cuối cùng). <b>Lưu ý:</b> 2 chức danh — "KT tổng hợp" và "KT trưởng" — mỗi tên xuất hiện 2 dòng riêng biệt trong file gốc với số liệu khác nhau; bảng chi tiết giữ nguyên đủ 24 dòng gốc, còn biểu đồ/KPI đã cộng gộp theo tên chức danh để tránh 2 cột trùng tên trên cùng 1 chart.
+  </footer>
+</div><!-- /page5 -->
+
 </main>
 
 <script>
@@ -821,9 +918,9 @@ renderHeatmap();
 // ======================================================================================
 // ================================ PAGE NAVIGATION =====================================
 // ======================================================================================
-const pageInitialized = { 1:true, 2:false, 3:false, 4:false };
+const pageInitialized = { 1:true, 2:false, 3:false, 4:false, 5:false };
 function showPage(n){
-  [1,2,3,4].forEach(i=>{
+  [1,2,3,4,5].forEach(i=>{
     document.getElementById('page'+i).classList.toggle('hidden', i!==n);
     document.getElementById('tabBtn'+i).classList.toggle('active', i===n);
   });
@@ -831,12 +928,14 @@ function showPage(n){
     if (n===2) initPage2();
     if (n===3) initPage3();
     if (n===4) initPage4();
+    if (n===5) initPage5();
     pageInitialized[n] = true;
   } else {
     // đã init trước đó -> resize lại các chart ECharts (Chart.js tự responsive)
     if (n===2){ if(donut2Instance) donut2Instance.resize(); }
     if (n===3){ if(stacked3Instance) stacked3Instance.resize(); if(heatmap3Instance) heatmap3Instance.resize(); }
     if (n===4){ if(donut4Instance) donut4Instance.resize(); if(stacked4Instance) stacked4Instance.resize(); }
+    if (n===5){ if(stacked5Instance) stacked5Instance.resize(); }
   }
 }
 
@@ -1534,6 +1633,151 @@ function resetFilters4(){
   document.getElementById('tableFilterCat4').value='all';
   document.getElementById('searchBox4').value='';
   renderAll4();
+}
+
+// ======================================================================================
+// ==================================== PAGE 5 DATA =====================================
+// ======================================================================================
+const POSITIONS5 = [{"position": "AM", "step1": 386, "step2": 509, "step3": 263, "total": 1158}, {"position": "C&B", "step1": 0, "step2": 14, "step3": 0, "total": 14}, {"position": "CV tuyển dụng", "step1": 156, "step2": 53, "step3": 0, "total": 209}, {"position": "Excutive Chef/ Trường BP phát triển SP", "step1": 194, "step2": 0, "step3": 0, "total": 194}, {"position": "FD", "step1": 519, "step2": 355, "step3": 1110, "total": 1984}, {"position": "FM", "step1": 0, "step2": 12, "step3": 0, "total": 12}, {"position": "GM", "step1": 1058, "step2": 466, "step3": 418, "total": 1942}, {"position": "HOO", "step1": 21, "step2": 551, "step3": 160, "total": 732}, {"position": "KT tổng hợp", "step1": 0, "step2": 3, "step3": 3, "total": 6}, {"position": "HRM", "step1": 0, "step2": 22, "step3": 0, "total": 22}, {"position": "IT", "step1": 225, "step2": 20, "step3": 0, "total": 245}, {"position": "KT trưởng", "step1": 79, "step2": 707, "step3": 337, "total": 1123}, {"position": "P.TGD", "step1": 0, "step2": 439, "step3": 13, "total": 452}, {"position": "PM", "step1": 204, "step2": 0, "step3": 189, "total": 393}, {"position": "TP.HR", "step1": 361, "step2": 0, "step3": 67, "total": 428}, {"position": "TGD", "step1": 0, "step2": 0, "step3": 845, "total": 845}, {"position": "Quản lý NH", "step1": 878, "step2": 0, "step3": 0, "total": 878}, {"position": "SCM", "step1": 36, "step2": 526, "step3": 0, "total": 562}, {"position": "Tphòng", "step1": 72, "step2": 0, "step3": 0, "total": 72}, {"position": "TP MKT", "step1": 0, "step2": 53, "step3": 0, "total": 53}, {"position": "TP phát triển SP", "step1": 0, "step2": 72, "step3": 0, "total": 72}, {"position": "KT doanh thu", "step1": 0, "step2": 129, "step3": 0, "total": 129}];   // đã cộng gộp theo tên chức danh (dùng cho chart/KPI)
+const POSITIONS5_RAW = [{"position": "AM", "step1": 386, "step2": 509, "step3": 263, "total": 1158}, {"position": "C&B", "step1": 0, "step2": 14, "step3": 0, "total": 14}, {"position": "CV tuyển dụng", "step1": 156, "step2": 53, "step3": 0, "total": 209}, {"position": "Excutive Chef/ Trường BP phát triển SP", "step1": 194, "step2": 0, "step3": 0, "total": 194}, {"position": "FD", "step1": 519, "step2": 355, "step3": 1110, "total": 1984}, {"position": "FM", "step1": 0, "step2": 12, "step3": 0, "total": 12}, {"position": "GM", "step1": 1058, "step2": 466, "step3": 418, "total": 1942}, {"position": "HOO", "step1": 21, "step2": 551, "step3": 160, "total": 732}, {"position": "KT tổng hợp", "step1": 0, "step2": 0, "step3": 3, "total": 3}, {"position": "HRM", "step1": 0, "step2": 22, "step3": 0, "total": 22}, {"position": "IT", "step1": 225, "step2": 20, "step3": 0, "total": 245}, {"position": "KT trưởng", "step1": 79, "step2": 0, "step3": 337, "total": 416}, {"position": "P.TGD", "step1": 0, "step2": 439, "step3": 13, "total": 452}, {"position": "PM", "step1": 204, "step2": 0, "step3": 189, "total": 393}, {"position": "TP.HR", "step1": 361, "step2": 0, "step3": 67, "total": 428}, {"position": "TGD", "step1": 0, "step2": 0, "step3": 845, "total": 845}, {"position": "Quản lý NH", "step1": 878, "step2": 0, "step3": 0, "total": 878}, {"position": "SCM", "step1": 36, "step2": 526, "step3": 0, "total": 562}, {"position": "Tphòng", "step1": 72, "step2": 0, "step3": 0, "total": 72}, {"position": "TP MKT", "step1": 0, "step2": 53, "step3": 0, "total": 53}, {"position": "TP phát triển SP", "step1": 0, "step2": 72, "step3": 0, "total": 72}, {"position": "KT doanh thu", "step1": 0, "step2": 129, "step3": 0, "total": 129}, {"position": "KT tổng hợp", "step1": 0, "step2": 3, "step3": 0, "total": 3}, {"position": "KT trưởng", "step1": 0, "step2": 707, "step3": 0, "total": 707}]; // giữ nguyên 24 dòng gốc (dùng cho bảng chi tiết)
+const STEP5_LABELS = { step1:'Duyệt gần kế cuối', step2:'Duyệt kế cuối', step3:'Duyệt cuối cùng' };
+const STEP5_COLORS = { step1:'#F59E0B', step2:'#8B5CF6', step3:'#0891B2' };
+const GRAND_TOTAL5 = POSITIONS5.reduce((s,p)=>s+p.total,0);
+
+let state5 = { step:'all', search:'' };
+let charts5 = {};
+let stacked5Instance = null;
+
+function valueFor5(p){ return state5.step==='all' ? p.total : p[state5.step]; }
+
+function getFiltered5(){
+  const s = state5.search.toLowerCase();
+  return POSITIONS5.filter(p => s==='' || p.position.toLowerCase().includes(s));
+}
+
+function initPage5(){
+  document.getElementById('filterStep5').addEventListener('change', e=>{ state5.step=e.target.value; renderAll5(); });
+  document.getElementById('searchBox5').addEventListener('input', e=>{ state5.search=e.target.value; renderAll5(); });
+  document.getElementById('resetBtn5').addEventListener('click', resetFilters5);
+  renderAll5();
+}
+
+function renderKPI5(filtered){
+  const total = filtered.reduce((s,p)=>s+valueFor5(p),0);
+  document.getElementById('kpiTotal5').textContent = fmtInt(total);
+
+  document.getElementById('kpiPositionCount5').textContent = fmtInt(filtered.length);
+  document.getElementById('kpiPositionCount5Sub').textContent = 'trên tổng 22 chức danh';
+
+  const top = [...filtered].sort((a,b)=>valueFor5(b)-valueFor5(a))[0];
+  if (top){
+    document.getElementById('kpiTopPosition5').textContent = top.position;
+    document.getElementById('kpiTopPosition5Sub').textContent = `${fmtInt(valueFor5(top))} lượt (${(valueFor5(top)/total*100).toFixed(1)}%)`;
+  } else {
+    document.getElementById('kpiTopPosition5').textContent = '-';
+    document.getElementById('kpiTopPosition5Sub').textContent = '';
+  }
+
+  const stepTotals = { step1:0, step2:0, step3:0 };
+  filtered.forEach(p=>{ stepTotals.step1+=p.step1; stepTotals.step2+=p.step2; stepTotals.step3+=p.step3; });
+  const topStep = Object.entries(stepTotals).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('kpiTopStep5').textContent = STEP5_LABELS[topStep[0]];
+  document.getElementById('kpiTopStep5Sub').textContent = `${fmtInt(topStep[1])} lượt`;
+}
+
+function renderStackedChart5(){
+  // luôn dựa trên toàn bộ dữ liệu để giữ bức tranh so sánh toàn cảnh, chỉ áp filter search
+  const s = state5.search.toLowerCase();
+  const base = s==='' ? POSITIONS5 : POSITIONS5.filter(p=>p.position.toLowerCase().includes(s));
+  const sorted = [...base].sort((a,b)=>a.total-b.total);
+
+  const el = document.getElementById('stackedChart5');
+  if (!stacked5Instance) stacked5Instance = echarts.init(el);
+  const labelSeries = {
+    name:'__label__', type:'bar', stack:'total', barMaxWidth:20,
+    itemStyle:{ color:'transparent' }, tooltip:{ show:false }, silent:true,
+    label:{
+      show:true, position:'right', color:'#0F172A', fontSize:11, fontWeight:700,
+      formatter: (params) => `${sorted[params.dataIndex].step1}/${sorted[params.dataIndex].step2}/${sorted[params.dataIndex].step3}`
+    },
+    data: sorted.map(()=>0)
+  };
+  stacked5Instance.setOption({
+    tooltip:{ trigger:'axis', axisPointer:{type:'shadow'} },
+    legend:{ bottom:0, textStyle:{fontSize:11}, data:['Duyệt gần kế cuối','Duyệt kế cuối','Duyệt cuối cùng'] },
+    grid:{ left:190, right:90, top:20, bottom:60 },
+    xAxis:{ type:'value', axisLabel:{ formatter:v=>fmtInt(v) } },
+    yAxis:{ type:'category', data: sorted.map(p=>p.position), axisLabel:{fontSize:11} },
+    series: [
+      { name:'Duyệt gần kế cuối', type:'bar', stack:'total', barMaxWidth:20, itemStyle:{color:STEP5_COLORS.step1}, data: sorted.map(p=>p.step1) },
+      { name:'Duyệt kế cuối', type:'bar', stack:'total', barMaxWidth:20, itemStyle:{color:STEP5_COLORS.step2}, data: sorted.map(p=>p.step2) },
+      { name:'Duyệt cuối cùng', type:'bar', stack:'total', barMaxWidth:20, itemStyle:{color:STEP5_COLORS.step3}, data: sorted.map(p=>p.step3) },
+      labelSeries
+    ]
+  });
+  window.addEventListener('resize', ()=>stacked5Instance.resize());
+}
+
+function renderRankChart5(filtered){
+  const titleEl = document.getElementById('rank5Title');
+  titleEl.textContent = state5.step==='all'
+    ? 'Xếp hạng chức danh theo tổng lượt tham gia'
+    : `Xếp hạng chức danh — ${STEP5_LABELS[state5.step]}`;
+
+  const sorted = [...filtered].sort((a,b)=>valueFor5(b)-valueFor5(a));
+  document.getElementById('rankChart5Inner').style.height = Math.max(360, sorted.length * 30) + 'px';
+
+  const ctx = document.getElementById('rankChart5');
+  if (charts5.rank) charts5.rank.destroy();
+  const color = state5.step==='all' ? '#0891B2' : STEP5_COLORS[state5.step];
+  charts5.rank = new Chart(ctx, {
+    type:'bar',
+    plugins:[ChartDataLabels],
+    data:{ labels: sorted.map(p=>p.position), datasets:[{ data: sorted.map(p=>valueFor5(p)), backgroundColor: color, borderRadius:4 }] },
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false, layout:{padding:{right:36}},
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${fmtInt(c.parsed.x)} lượt`}},
+        datalabels:{ anchor:'end', align:'right', offset:4, color:'#0F172A', font:{weight:700,size:11}, formatter:v=>fmtInt(v) } },
+      scales:{ x:{ beginAtZero:true, ticks:{callback:v=>fmtInt(v)} }, y:{ ticks:{font:{size:11}} } }
+    }
+  });
+}
+
+let gridInstance5 = null;
+function renderTable5(){
+  const s = state5.search.toLowerCase();
+  const rows = POSITIONS5_RAW.filter(r => s==='' || r.position.toLowerCase().includes(s))
+    .sort((a,b)=>b.total-a.total);
+  const columns = ['Chức danh','Duyệt gần kế cuối','Duyệt kế cuối','Duyệt cuối cùng','Tổng cộng'];
+  const data = rows.map(r => [r.position, r.step1, r.step2, r.step3, r.total]);
+
+  const container = document.getElementById('dataTable5');
+  container.innerHTML = '';
+  if (data.length === 0){
+    container.innerHTML = '<div class="text-center py-8 text-sm" style="color:var(--color-text-muted)">Không có dữ liệu phù hợp với bộ lọc này.</div>';
+    return;
+  }
+  gridInstance5 = new gridjs.Grid({
+    columns, data, sort:true, pagination:{limit:15},
+    className:{ table:'text-sm' },
+    style:{ th:{ 'font-size':'12px' }, td:{ 'font-size':'12.5px' } }
+  }).render(container);
+}
+
+function renderAll5(){
+  const filtered = getFiltered5();
+  document.getElementById('emptyState5').classList.toggle('hidden', filtered.length > 0);
+  renderKPI5(filtered);
+  renderStackedChart5();
+  renderRankChart5(filtered);
+  renderTable5();
+}
+
+function resetFilters5(){
+  state5 = { step:'all', search:'' };
+  document.getElementById('filterStep5').value='all';
+  document.getElementById('searchBox5').value='';
+  renderAll5();
 }
 </script>
 </body>
