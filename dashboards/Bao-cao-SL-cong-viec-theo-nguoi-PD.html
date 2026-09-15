@@ -583,7 +583,7 @@
   <div class="grid grid-cols-1 gap-4 mb-4">
     <div class="card">
       <h3 class="text-h2 mb-1">Cơ cấu 3 bước theo chức danh</h3>
-      <p class="text-xs mb-2" style="color:var(--color-text-muted)">Số cuối mỗi thanh: x/y/z = Duyệt gần kế cuối / Duyệt kế cuối / Duyệt cuối cùng</p>
+      <p class="text-xs mb-2" style="color:var(--color-text-muted)">Số cuối mỗi thanh: x/y/z/m = Duyệt gần kế cuối / Duyệt kế cuối / Duyệt cuối cùng / Trung bình mỗi tháng (tổng &divide; 8)</p>
       <div id="stackedChart5" style="height:560px;"></div>
     </div>
   </div>
@@ -1698,14 +1698,30 @@ function renderStackedChart5(){
     itemStyle:{ color:'transparent' }, tooltip:{ show:false }, silent:true,
     label:{
       show:true, position:'right', color:'#0F172A', fontSize:11, fontWeight:700,
-      formatter: (params) => `${sorted[params.dataIndex].step1}/${sorted[params.dataIndex].step2}/${sorted[params.dataIndex].step3}`
+      formatter: (params) => {
+        const p = sorted[params.dataIndex];
+        const m = (p.total/8).toFixed(1);
+        return `${p.step1}/${p.step2}/${p.step3}/${m}`;
+      }
     },
     data: sorted.map(()=>0)
   };
   stacked5Instance.setOption({
-    tooltip:{ trigger:'axis', axisPointer:{type:'shadow'} },
+    tooltip:{
+      trigger:'axis', axisPointer:{type:'shadow'},
+      formatter: (params) => {
+        const p = sorted[params[0].dataIndex];
+        let html = `<b>${p.position}</b><br/>`;
+        params.forEach(item=>{
+          if (item.seriesName === '__label__') return;
+          html += `${item.marker} ${item.seriesName}&nbsp;&nbsp;<b>${fmtInt(item.value)}</b><br/>`;
+        });
+        html += `<br/>Trung bình tháng&nbsp;&nbsp;<b>${(p.total/8).toFixed(1)}</b>`;
+        return html;
+      }
+    },
     legend:{ bottom:0, textStyle:{fontSize:11}, data:['Duyệt gần kế cuối','Duyệt kế cuối','Duyệt cuối cùng'] },
-    grid:{ left:190, right:90, top:20, bottom:60 },
+    grid:{ left:190, right:120, top:20, bottom:60 },
     xAxis:{ type:'value', axisLabel:{ formatter:v=>fmtInt(v) } },
     yAxis:{ type:'category', data: sorted.map(p=>p.position), axisLabel:{fontSize:11} },
     series: [
